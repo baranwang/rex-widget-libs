@@ -53,7 +53,7 @@ interface BaseWidgetModule {
   /** 模块唯一标识符 */
   id: string;
   /** 模块类型 */
-  type?: "danmu" | "stream" | "subtitle";
+  type?: 'danmu' | 'stream' | 'subtitle';
   /** 模块标题 */
   title: string;
   /** 模块描述 */
@@ -78,44 +78,36 @@ interface WidgetModuleVideo extends BaseWidgetModule {
 }
 
 interface WidgetModuleDanmu extends BaseWidgetModule {
-  type: "danmu";
-  id: "searchDanmu" | "getDetail" | "getComments" | "getDanmuWithSegmentTime";
+  type: 'danmu';
+  id: 'searchDanmu' | 'getDetail' | 'getComments' | 'getDanmuWithSegmentTime';
 }
 
 interface WidgetModuleStream extends BaseWidgetModule {
-  type: "stream";
-  id: "loadResource";
+  type: 'stream';
+  id: 'loadResource';
 }
 
 interface WidgetModuleSubtitle extends BaseWidgetModule {
-  type: "subtitle";
-  id: "loadSubtitle";
+  type: 'subtitle';
+  id: 'loadSubtitle';
 }
 
 type WidgetI18nLocale =
-  | "en"
-  | "zh-Hans"
-  | "zh-Hant"
-  | "ja"
-  | "ko"
-  | "es"
-  | "fr"
-  | "pt-BR"
-  | "ru"
-  | "ar"
+  | 'en'
+  | 'zh-Hans'
+  | 'zh-Hant'
+  | 'ja'
+  | 'ko'
+  | 'es'
+  | 'fr'
+  | 'pt-BR'
+  | 'ru'
+  | 'ar'
   | (string & {});
 
 type WidgetModule = WidgetModuleVideo | WidgetModuleDanmu | WidgetModuleStream | WidgetModuleSubtitle;
 
-type WidgetModuleParamType =
-  | "input"
-  | "constant"
-  | "enumeration"
-  | "count"
-  | "page"
-  | "offset"
-  | "language"
-  | "userId";
+type WidgetModuleParamType = 'input' | 'constant' | 'enumeration' | 'count' | 'page' | 'offset' | 'language' | 'userId';
 
 interface WidgetModuleParam {
   /** 参数名 */

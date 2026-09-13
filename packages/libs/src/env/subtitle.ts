@@ -31,4 +31,6 @@ interface ResolveSubtitleArchiveParams {
 
 type ResolveSubtitleArchiveResult = string | string[] | { path: string } | { files: string[] } | null;
 
-declare let resolveSubtitleArchive: (params: ResolveSubtitleArchiveParams) => ResolveSubtitleArchiveResult | Promise<ResolveSubtitleArchiveResult>;
+declare let resolveSubtitleArchive: (
+  params: ResolveSubtitleArchiveParams,
+) => ResolveSubtitleArchiveResult | Promise<ResolveSubtitleArchiveResult>;

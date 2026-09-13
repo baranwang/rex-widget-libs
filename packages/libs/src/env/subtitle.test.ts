@@ -1,7 +1,7 @@
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { expect, test } from '@rstest/core';
-import { Project, type InterfaceDeclaration, type SourceFile } from 'ts-morph';
+import { type InterfaceDeclaration, Project, type SourceFile } from 'ts-morph';
 
 const envDir = path.dirname(fileURLToPath(import.meta.url));
 
@@ -93,7 +93,7 @@ test('resolveSubtitleArchive is a top-level async-capable hook', () => {
     throw new Error('missing resolveSubtitleArchive type node');
   }
 
-  expect(typeNode.getText()).toBe(
-    '(params: ResolveSubtitleArchiveParams) => ResolveSubtitleArchiveResult | Promise<ResolveSubtitleArchiveResult>',
+  expect(typeNode.getText().replace(/,/g, '').replace(/\s+/g, '')).toBe(
+    '(params:ResolveSubtitleArchiveParams)=>ResolveSubtitleArchiveResult|Promise<ResolveSubtitleArchiveResult>',
   );
 });

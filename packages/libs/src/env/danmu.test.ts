@@ -1,7 +1,7 @@
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { expect, test } from '@rstest/core';
-import { Project, type InterfaceDeclaration, type SourceFile } from 'ts-morph';
+import { type InterfaceDeclaration, Project, type SourceFile } from 'ts-morph';
 
 const envDir = path.dirname(fileURLToPath(import.meta.url));
 

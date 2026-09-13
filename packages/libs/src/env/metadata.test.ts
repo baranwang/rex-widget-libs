@@ -1,7 +1,13 @@
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { expect, test } from '@rstest/core';
-import { Project, type InterfaceDeclaration, type SourceFile } from 'ts-morph';
+import { type InterfaceDeclaration, Project, type SourceFile } from 'ts-morph';
+
+/** Canary: ts-to-zod must not scan env test files (I4). */
+// biome-ignore lint/correctness/noUnusedVariables: scanned-by-schema-gen canary
+interface TsToZodShouldNotSeeThis {
+  leaked: true;
+}
 
 const envDir = path.dirname(fileURLToPath(import.meta.url));
 
@@ -54,8 +60,8 @@ test('WidgetMetadata.i18n uses known Rex locales then string fallback', () => {
   }
 
   const localeText = localeNode.getText();
-  for (const locale of ['"en"', '"zh-Hans"', '"zh-Hant"', '"ja"', '"ko"', '"es"', '"fr"', '"pt-BR"', '"ru"', '"ar"']) {
-    expect(localeText).toContain(locale);
+  for (const locale of ['en', 'zh-Hans', 'zh-Hant', 'ja', 'ko', 'es', 'fr', 'pt-BR', 'ru', 'ar']) {
+    expect(localeText.includes(`'${locale}'`) || localeText.includes(`"${locale}"`)).toBe(true);
   }
   expect(localeText).toContain('(string & {})');
 
@@ -72,5 +78,5 @@ test('WidgetModuleParamType includes userId', () => {
     throw new Error('missing WidgetModuleParamType type node');
   }
 
-  expect(typeNode.getText()).toContain('"userId"');
+  expect(typeNode.getText().includes("'userId'") || typeNode.getText().includes('"userId"')).toBe(true);
 });

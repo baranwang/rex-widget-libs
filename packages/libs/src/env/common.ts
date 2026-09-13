@@ -11,7 +11,7 @@ interface BaseParams {
   /**
    * 类型
    */
-  type: "tv" | "movie";
+  type: 'tv' | 'movie';
   /**
    * 搜索关键词
    */
