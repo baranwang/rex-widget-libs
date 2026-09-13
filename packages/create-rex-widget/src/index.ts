@@ -120,7 +120,7 @@ async function main() {
       placeholder: 'rex-widget-project',
       defaultValue: 'rex-widget-project',
       validate: (value) => {
-        if (value.length === 0) {
+        if (value == null || value.length === 0) {
           return 'Project name is required';
         }
       },
