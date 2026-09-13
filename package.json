@@ -4,6 +4,7 @@
   "scripts": {
     "dev": "turbo run dev --filter=!@examples/*",
     "build": "turbo run build --filter=!@examples/*",
+    "test": "turbo run test",
     "version": "changeset version",
     "postversion": "npm run build",
     "prerelease": "npm run build",

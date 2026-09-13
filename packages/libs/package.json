@@ -14,9 +14,13 @@
   "files": [
     "dist"
   ],
+  "publishConfig": {
+    "provenance": true
+  },
   "scripts": {
     "build": "rslib build",
-    "dev": "rslib build --watch"
+    "dev": "rslib build --watch",
+    "test": "rstest"
   },
   "dependencies": {
     "cheerio": "^1.2.0"
@@ -24,6 +28,8 @@
   "devDependencies": {
     "@rsbuild/core": "^2.2.5",
     "@rslib/core": "^1.0.0",
+    "@rstest/adapter-rslib": "^0.11.12",
+    "@rstest/core": "^0.11.12",
     "@types/node": "^26.5.1",
     "ts-morph": "^28.0.0",
     "ts-to-zod": "^5.1.0",

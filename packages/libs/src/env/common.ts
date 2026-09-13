@@ -11,7 +11,7 @@ interface BaseParams {
   /**
    * 类型
    */
-  type: "tv" | "movie";
+  type: 'tv' | 'movie';
   /**
    * 搜索关键词
    */
@@ -28,6 +28,10 @@ interface BaseParams {
    * 播出日期
    */
   airDate?: string;
+  /**
+   * 首播日期
+   */
+  premiereDate?: string;
   /**
    * 时长
    */
