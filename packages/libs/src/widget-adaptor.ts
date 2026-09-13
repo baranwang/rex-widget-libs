@@ -13,6 +13,13 @@ interface RequestOptions {
   allow_redirects?: boolean;
 }
 
+interface HttpRequestOptions extends RequestOptions {
+  url: string;
+  method?: 'GET' | 'POST';
+  data?: unknown;
+  body?: unknown;
+}
+
 const createHttpRequest = async <T>(
   url: string,
   method: 'GET' | 'POST',
@@ -71,9 +78,11 @@ const createHttpRequest = async <T>(
   };
 };
 
+const ADAPTOR_ROOT = path.join(os.tmpdir(), 'rex-widget-adaptor');
+
 const STORAGE_CONFIG = {
   get DIR() {
-    const dir = path.join(os.tmpdir(), 'rex-widget-adaptor', 'storage');
+    const dir = path.join(ADAPTOR_ROOT, 'storage');
     if (!fs.existsSync(dir)) {
       fs.mkdirSync(dir, { recursive: true });
     }
@@ -84,6 +93,16 @@ const STORAGE_CONFIG = {
   },
 };
 
+const SHARED_CACHE_CONFIG = {
+  getFilePath: (namespace: string, key: string) => {
+    const dir = path.join(ADAPTOR_ROOT, 'shared-cache', encodeURIComponent(namespace));
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+    }
+    return path.join(dir, encodeURIComponent(key));
+  },
+};
+
 export const WidgetAdaptor = {
   http: {
     get: async <T>(url: string, options?: RequestOptions) => {
@@ -91,6 +110,10 @@ export const WidgetAdaptor = {
     },
     post: async <T>(url: string, body: unknown, options?: RequestOptions) => {
       return createHttpRequest<T>(url, 'POST', { ...options, body });
+    },
+    request: async <T>(options: HttpRequestOptions) => {
+      const { url, method = 'GET', data, body, ...rest } = options;
+      return createHttpRequest<T>(url, method, { ...rest, body: body ?? data });
     },
   },
   tmdb: {
@@ -132,6 +155,27 @@ export const WidgetAdaptor = {
     },
     clear: () => {
       return fs.promises.rm(STORAGE_CONFIG.DIR, { recursive: true });
+    },
+  },
+  sharedCache: {
+    get: (namespace: string, key: string) => {
+      const filePath = SHARED_CACHE_CONFIG.getFilePath(namespace, key);
+      if (!fs.existsSync(filePath)) {
+        return null;
+      }
+
+      const raw = fs.readFileSync(filePath, 'utf-8');
+      try {
+        return JSON.parse(raw) as unknown;
+      } catch {
+        return raw;
+      }
+    },
+    set: (namespace: string, key: string, value?: unknown) => {
+      fs.writeFileSync(SHARED_CACHE_CONFIG.getFilePath(namespace, key), JSON.stringify(value ?? null), 'utf-8');
+    },
+    remove: (namespace: string, key: string) => {
+      fs.rmSync(SHARED_CACHE_CONFIG.getFilePath(namespace, key), { force: true });
     },
   },
 };
