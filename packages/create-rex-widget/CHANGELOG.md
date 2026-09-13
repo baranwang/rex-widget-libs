@@ -1,5 +1,15 @@
 # create-rex-widget
 
+## 3.0.0
+
+### Major Changes
+
+- ddb5a77: Rename the player from Forward to Rex and publish packages under the `@rexnow` scope.
+
+### Minor Changes
+
+- c325f08: Add the missing public widget env types used by official Forward demo scripts and official Rex plugins.
+
 ## 2.1.0
 
 ## 2.0.0
