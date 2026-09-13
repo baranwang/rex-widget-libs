@@ -33,7 +33,10 @@ export function generateEnvZodSource(envDir: string): string {
 export function sanitizeEnvZodSource(source: string): string {
   return source
     .replace(/import \{ type \w+ \} from "";\n/g, '')
-    .replace(/: z\.ZodSchema<\w+>/g, '')
+    .replace(
+      /: z\.ZodSchema<\w+> = z\.lazy\(\(\) =>/g,
+      ': z.ZodTypeAny = z.lazy((): z.ZodTypeAny =>',
+    )
     .replace(
       'z.record(widgetI18nLocaleSchema, z.record(z.string(), z.string())).partial()',
       'z.record(widgetI18nLocaleSchema, z.record(z.string(), z.string()))',

@@ -6,15 +6,26 @@ import { generateEnvZodSource } from './generate-env-zod';
 
 const envDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), 'src/env');
 
+/** Emitted env.zod is TypeScript; Node eval needs the type annotations stripped. */
+function asRuntimeJs(source: string): string {
+  return source
+    .replaceAll(': z.ZodTypeAny', '')
+    .replaceAll('(): z.ZodTypeAny =>', '() =>');
+}
+
 test('generated env.zod evaluates and has no empty imports or record.partial()', async () => {
   const source = generateEnvZodSource(envDir);
 
   expect(source).not.toMatch(/from ["']{2}/);
   expect(source).not.toMatch(/z\.record\([\s\S]*?\)\.partial\(\)/);
   expect(source).not.toContain('tsToZodShouldNotSeeThisSchema');
+  expect(source).not.toMatch(/: z\.ZodSchema</);
+  expect(source).toContain(
+    'export const videoItemSchema: z.ZodTypeAny = z.lazy((): z.ZodTypeAny =>',
+  );
 
   const file = path.join(path.dirname(fileURLToPath(import.meta.url)), '.tmp-env-zod-eval.js');
-  fs.writeFileSync(file, source);
+  fs.writeFileSync(file, asRuntimeJs(source));
 
   try {
     const mod = await import(`${pathToFileURL(file).href}?t=${Date.now()}`);
@@ -35,7 +46,7 @@ test('generated env.zod evaluates and has no empty imports or record.partial()',
 test('widgetMetadataSchema accepts unknown i18n locale keys', async () => {
   const source = generateEnvZodSource(envDir);
   const file = path.join(path.dirname(fileURLToPath(import.meta.url)), '.tmp-env-zod-i18n.js');
-  fs.writeFileSync(file, source);
+  fs.writeFileSync(file, asRuntimeJs(source));
 
   try {
     const mod = await import(`${pathToFileURL(file).href}?t=${Date.now()}`);
