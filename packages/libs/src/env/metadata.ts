@@ -16,6 +16,18 @@ interface WidgetMetadata {
   /** 所需 Rex 版本 */
   requiredVersion?: string;
   /**
+   * Widget 图标地址（官方 demo 字段名）
+   */
+  icon?: string;
+  /**
+   * Widget 图标地址（Rex 插件字段名，与 icon 同一含义）
+   */
+  iconurl?: string;
+  /**
+   * 文案国际化：locale → 源文案 → 译文
+   */
+  i18n?: Partial<Record<WidgetI18nLocale, Record<string, string>>>;
+  /**
    * 详情数据缓存时长，单位：秒
    * @default 60
    */
@@ -80,9 +92,30 @@ interface WidgetModuleSubtitle extends BaseWidgetModule {
   id: "loadSubtitle";
 }
 
+type WidgetI18nLocale =
+  | "en"
+  | "zh-Hans"
+  | "zh-Hant"
+  | "ja"
+  | "ko"
+  | "es"
+  | "fr"
+  | "pt-BR"
+  | "ru"
+  | "ar"
+  | (string & {});
+
 type WidgetModule = WidgetModuleVideo | WidgetModuleDanmu | WidgetModuleStream | WidgetModuleSubtitle;
 
-type WidgetModuleParamType = "input" | "constant" | "enumeration" | "count" | "page" | "offset" | "language";
+type WidgetModuleParamType =
+  | "input"
+  | "constant"
+  | "enumeration"
+  | "count"
+  | "page"
+  | "offset"
+  | "language"
+  | "userId";
 
 interface WidgetModuleParam {
   /** 参数名 */
