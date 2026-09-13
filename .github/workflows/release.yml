@@ -24,14 +24,18 @@ jobs:
           node-version-file: .nvmrc
           cache: pnpm
           registry-url: https://registry.npmjs.org
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
-      # setup-node still writes an empty _authToken when registry-url is set,
-      # which skips OIDC. Strip it so npm uses trusted publishing.
+      # setup-node writes _authToken=${NODE_AUTH_TOKEN} when registry-url is set.
+      # An empty token skips OIDC, so strip it unless NPM_TOKEN is set for first publish.
       - run: |
           npmrc="${NPM_CONFIG_USERCONFIG:-$HOME/.npmrc}"
-          if [ -f "$npmrc" ]; then
+          if [ -z "${NODE_AUTH_TOKEN:-}" ] && [ -f "$npmrc" ]; then
             sed -i '/_authToken/d' "$npmrc"
           fi
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       - run: pnpm install
 
@@ -45,3 +49,4 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NPM_CONFIG_PROVENANCE: true
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
