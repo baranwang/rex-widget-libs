@@ -4,8 +4,11 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
-overrides:
-  zod: 4.6.4
+catalogs:
+  default:
+    zod:
+      specifier: ^4.6.4
+      version: 4.6.4
 
 importers:
 
@@ -95,7 +98,7 @@ importers:
         specifier: ^7.0.2
         version: 7.0.2
       zod:
-        specifier: 4.6.4
+        specifier: 'catalog:'
         version: 4.6.4
 
   packages/rslib-plugin:
@@ -129,7 +132,7 @@ importers:
         specifier: ^7.0.2
         version: 7.0.2
       zod:
-        specifier: 4.6.4
+        specifier: 'catalog:'
         version: 4.6.4
 
 packages:

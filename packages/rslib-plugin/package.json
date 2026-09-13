@@ -23,7 +23,7 @@
     "@rslib/core": "^1.0.0",
     "@types/node": "^26.5.1",
     "typescript": "^7.0.2",
-    "zod": "^4.6.4"
+    "zod": "catalog:"
   },
   "dependencies": {
     "@hono/node-server": "^2.1.1",
