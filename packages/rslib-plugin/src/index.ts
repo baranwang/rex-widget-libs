@@ -1,6 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
-import { widgetMetadataSchema } from "@forward-widget/libs/env.zod";
+import { widgetMetadataSchema } from "@rexnow/libs/env.zod";
 import type { RsbuildPlugin, RsbuildPluginAPI, Rspack } from "@rsbuild/core";
 import { camelCase, upperFirst } from "es-toolkit";
 import { Node, Project, type SourceFile, SyntaxKind } from "ts-morph";
@@ -11,10 +11,10 @@ import { generateVideoModuleInterface } from "./generators/video";
 import { generateParamType } from "./utils";
 
 // 类型定义
-interface ForwardWidgetPluginOptions {
+interface RexWidgetPluginOptions {
   /**
    * 生成的 dts 文件路径
-   * @default `src/forward-widget-env.d.ts`
+   * @default `src/rex-widget-env.d.ts`
    */
   typesFilePath?: string;
 
@@ -122,7 +122,7 @@ function generateModuleInterfaces(nameSpaceName: string, sourceFile: SourceFile,
 // 文件处理工具
 /**
  * 清除导出声明
- * @description Forward Widget 不支持脚本有导出声明
+ * @description Rex Widget 不支持脚本有导出声明
  */
 async function clearExportDeclaration(distPath: string): Promise<void> {
   if (!fs.existsSync(distPath)) {
@@ -246,17 +246,17 @@ async function setupTypeDefinitionFile(dtsPath: string): Promise<SourceFile> {
     typeDefFile = dtsProject.createSourceFile(dtsPath, "");
   }
 
-  typeDefFile.insertText(0, `/// <reference types='@forward-widget/libs/env' />\n\n`);
+  typeDefFile.insertText(0, `/// <reference types='@rexnow/libs/env' />\n\n`);
 
   return typeDefFile;
 }
 
 // 主插件导出
-export const pluginForwardWidget = ({
-  typesFilePath = "src/forward-widget-env.d.ts",
+export const pluginRexWidget = ({
+  typesFilePath = "src/rex-widget-env.d.ts",
   devPort = 8000,
-}: ForwardWidgetPluginOptions = {}): RsbuildPlugin => ({
-  name: "plugin-forward-widget",
+}: RexWidgetPluginOptions = {}): RsbuildPlugin => ({
+  name: "plugin-rex-widget",
 
   setup(api) {
     const dtsPath = path.resolve(api.context.rootPath, typesFilePath);
@@ -271,7 +271,7 @@ export const pluginForwardWidget = ({
       try {
         await processAfterBuild(api, stats, dtsPath);
       } catch (error) {
-        api.logger.error("Forward Widget 插件处理失败", error);
+        api.logger.error("Rex Widget 插件处理失败", error);
       }
 
       try {
@@ -284,7 +284,7 @@ export const pluginForwardWidget = ({
           });
         }
       } catch (error) {
-        api.logger.error("Forward Widget 插件开发服务器启动失败", error);
+        api.logger.error("Rex Widget 插件开发服务器启动失败", error);
       }
     });
   },

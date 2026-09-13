@@ -1,4 +1,4 @@
-import { pluginForwardWidget } from '@forward-widget/rslib-plugin';
+import { pluginRexWidget } from '@rexnow/rslib-plugin';
 import { defineConfig } from '@rslib/core';
 import pkg from './package.json';
 
@@ -16,7 +16,7 @@ export default defineConfig({
     },
   ],
   output: {
-    target: "web",
+    target: 'web',
     minify: {
       jsOptions: {
         minimizerOptions: {
@@ -30,5 +30,5 @@ export default defineConfig({
       },
     },
   },
-  plugins: [pluginForwardWidget()],
+  plugins: [pluginRexWidget()],
 });

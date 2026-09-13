@@ -1,5 +1,11 @@
 packages:
   - "packages/libs"
   - "packages/rslib-plugin"
-  - "packages/create-forward-widget"
+  - "packages/create-rex-widget"
   - "examples/*"
+catalog:
+  zod: ^4.6.4
+allowBuilds:
+  core-js: false
+minimumReleaseAgeExclude:
+  - zod@4.6.4

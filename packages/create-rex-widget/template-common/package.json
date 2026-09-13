@@ -1,5 +1,5 @@
 {
-  "name": "forward-widget-template-common",
+  "name": "rex-widget-template-common",
   "version": "0.0.0",
   "type": "module",
   "exports": {
@@ -17,8 +17,8 @@
     "dev": "rslib build --watch"
   },
   "devDependencies": {
-    "@forward-widget/libs": "workspace:*",
-    "@forward-widget/rslib-plugin": "workspace:*",
-    "@rslib/core": "^0.11.2"
+    "@rexnow/libs": "workspace:*",
+    "@rexnow/rslib-plugin": "workspace:*",
+    "@rslib/core": "^1.0.0"
   }
 }

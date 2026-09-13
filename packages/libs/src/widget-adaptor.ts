@@ -73,7 +73,7 @@ const createHttpRequest = async <T>(
 
 const STORAGE_CONFIG = {
   get DIR() {
-    const dir = path.join(os.tmpdir(), 'forward-widget-adaptor', 'storage');
+    const dir = path.join(os.tmpdir(), 'rex-widget-adaptor', 'storage');
     if (!fs.existsSync(dir)) {
       fs.mkdirSync(dir, { recursive: true });
     }

@@ -1,4 +1,4 @@
-# @forward-widget/libs
+# @rexnow/libs
 
 ## 2.1.0
 

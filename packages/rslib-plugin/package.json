@@ -1,5 +1,5 @@
 {
-  "name": "@forward-widget/rslib-plugin",
+  "name": "@rexnow/rslib-plugin",
   "version": "2.1.0",
   "type": "module",
   "exports": {
@@ -18,22 +18,22 @@
     "dev": "rslib build --watch"
   },
   "devDependencies": {
-    "@forward-widget/libs": "workspace:*",
-    "@rsbuild/core": "^1.4.5",
-    "@rslib/core": "^0.10.5",
-    "@types/node": "^22.16.0",
-    "typescript": "^5.8.3",
-    "zod": "^4.1.13"
+    "@rexnow/libs": "workspace:*",
+    "@rsbuild/core": "^2.2.5",
+    "@rslib/core": "^1.0.0",
+    "@types/node": "^26.5.1",
+    "typescript": "^7.0.2",
+    "zod": "catalog:"
   },
   "dependencies": {
-    "@hono/node-server": "^1.18.2",
-    "es-toolkit": "^1.39.9",
-    "hono": "^4.9.1",
-    "ts-morph": "^26.0.0"
+    "@hono/node-server": "^2.1.1",
+    "es-toolkit": "^1.52.0",
+    "hono": "^4.13.7",
+    "ts-morph": "^28.0.0"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/baranwang/forward-widget-libs.git",
+    "url": "https://github.com/baranwang/rex-widget-libs.git",
     "directory": "packages/rslib-plugin"
   },
   "author": "baranwang",

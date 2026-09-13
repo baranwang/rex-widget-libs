@@ -1,5 +1,5 @@
 {
-  "name": "create-forward-widget",
+  "name": "create-rex-widget",
   "version": "2.1.0",
   "type": "module",
   "exports": {
@@ -10,7 +10,7 @@
   },
   "types": "./dist/index.d.ts",
   "bin": {
-    "create-forward-widget": "./dist/index.js"
+    "create-rex-widget": "./dist/index.js"
   },
   "files": [
     "template-*",
@@ -21,22 +21,22 @@
     "dev": "rslib build --watch"
   },
   "dependencies": {
-    "@clack/prompts": "^0.11.0",
+    "@clack/prompts": "^1.8.0",
     "deepmerge": "^4.3.1",
     "picocolors": "^1.1.1"
   },
   "devDependencies": {
-    "@forward-widget/libs": "workspace:*",
-    "@forward-widget/rslib-plugin": "workspace:*",
-    "@rslib/core": "^0.10.5",
-    "@types/node": "^22.16.0",
-    "type-fest": "^4.41.0",
-    "typescript": "^5.8.3"
+    "@rexnow/libs": "workspace:*",
+    "@rexnow/rslib-plugin": "workspace:*",
+    "@rslib/core": "^1.0.0",
+    "@types/node": "^26.5.1",
+    "type-fest": "^5.9.0",
+    "typescript": "^7.0.2"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/baranwang/forward-widget-libs.git",
-    "directory": "packages/create-forward-widget"
+    "url": "https://github.com/baranwang/rex-widget-libs.git",
+    "directory": "packages/create-rex-widget"
   },
   "author": "baranwang",
   "license": "MIT"

@@ -13,7 +13,7 @@ interface WidgetMetadata {
   site?: string;
   /** Widget 版本 */
   version?: string;
-  /** 所需 ForwardWidget 版本 */
+  /** 所需 Rex 版本 */
   requiredVersion?: string;
   /**
    * 详情数据缓存时长，单位：秒

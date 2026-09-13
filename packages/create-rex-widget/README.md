@@ -1,24 +1,24 @@
-# Create Forward Widget
+# Create Rex Widget
 
-> 快速创建 Forward Widget 项目的脚手架工具
+> 快速创建 Rex Widget 项目的脚手架工具
 
-[![NPM Version](https://img.shields.io/npm/v/create-forward-widget)](https://www.npmjs.com/package/create-forward-widget)
-![NPM License](https://img.shields.io/npm/l/create-forward-widget)
+[![NPM Version](https://img.shields.io/npm/v/create-rex-widget)](https://www.npmjs.com/package/create-rex-widget)
+![NPM License](https://img.shields.io/npm/l/create-rex-widget)
 
 ## 🚀 简介
 
-`create-forward-widget` 是一个用于快速创建 Forward Widget 项目的脚手架工具。它提供了开箱即用的项目模板，包含完整的开发环境配置和类型定义，让你可以专注于 Widget 逻辑的实现。
+`create-rex-widget` 是一个用于快速创建 Rex Widget 项目的脚手架工具。它提供了开箱即用的项目模板，包含完整的开发环境配置和类型定义，让你可以专注于 Widget 逻辑的实现。
 
 ## 📦 安装与使用
 
 ### 创建新项目
 
 ```bash
-npm create forward-widget@latest
+npm create rex-widget@latest
 # 或
-yarn create forward-widget
+yarn create rex-widget
 # 或
-pnpm create forward-widget@latest
+pnpm create rex-widget@latest
 ```
 
 ### 交互式创建
@@ -47,7 +47,7 @@ npm run dev
 ```
 your-project-name/
 ├── src/
-│   ├── forward-widget-env.d.ts    # 类型定义文件
+│   ├── rex-widget-env.d.ts    # 类型定义文件
 │   └── index.ts                   # 主要逻辑文件
 ├── dist/                          # 构建输出目录
 ├── package.json                   # 项目配置
@@ -87,9 +87,9 @@ npm run build
 
 ## 📚 相关文档
 
-- [Forward Widget 开发文档](https://github.com/your-org/forward-widget-docs)
-- [@forward-widget/libs](../libs/README.md) - 核心工具库
-- [@forward-widget/rslib-plugin](../rslib-plugin/README.md) - 构建插件
+- [Rex Widget 开发文档](https://github.com/your-org/rex-widget-docs)
+- [@rexnow/libs](../libs/README.md) - 核心工具库
+- [@rexnow/rslib-plugin](../rslib-plugin/README.md) - 构建插件
 
 ## 🤝 贡献
 

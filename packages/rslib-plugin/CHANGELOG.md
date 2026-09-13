@@ -1,4 +1,4 @@
-# @forward-widget/rslib-plugin
+# @rexnow/rslib-plugin
 
 ## 2.1.0
 

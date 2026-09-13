@@ -1,4 +1,4 @@
-/** @type {import('./forward-widget-env')} */
+/** @type {import('./rex-widget-env')} */
 
 WidgetMetadata = {
   id: '',

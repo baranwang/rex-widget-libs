@@ -1,0 +1,8 @@
+{
+  "name": "rex-widget-template-ts",
+  "version": "0.0.0",
+  "devDependencies": {
+    "@types/node": "^26.5.1",
+    "typescript": "^7.0.2"
+  }
+}
