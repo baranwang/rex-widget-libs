@@ -1,6 +1,7 @@
 interface AnimeItem {
   animeId: string | number;
   animeTitle: string;
+  bangumiId?: string | number;
 }
 
 interface GetDetailResponseItem {
@@ -21,9 +22,14 @@ interface CommentItem {
   m: string;
 }
 
+/**
+ * README 弹幕格式 2：[时间, 位置, 颜色, 额外信息, 文本]
+ */
+type CommentTuple = [number, string, string, string, string];
+
 interface GetCommentsResponse {
   count: number;
-  comments: Array<CommentItem>;
+  comments: Array<CommentItem | CommentTuple>;
 }
 
 interface GetDanmuWithSegmentTimeParams extends BaseParams, AnimeItem, EpisodeItem {

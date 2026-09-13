@@ -29,6 +29,10 @@ interface BaseParams {
    */
   airDate?: string;
   /**
+   * 首播日期
+   */
+  premiereDate?: string;
+  /**
    * 时长
    */
   runtime?: string;
