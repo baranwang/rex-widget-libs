@@ -85,6 +85,12 @@ importers:
       '@rslib/core':
         specifier: ^1.0.0
         version: 1.0.0(core-js@3.44.0)(typescript@7.0.2)
+      '@rstest/adapter-rslib':
+        specifier: ^0.11.12
+        version: 0.11.12(@rslib/core@1.0.0(core-js@3.44.0)(typescript@7.0.2))(@rstest/core@0.11.12(core-js@3.44.0))(typescript@7.0.2)
+      '@rstest/core':
+        specifier: ^0.11.12
+        version: 0.11.12(core-js@3.44.0)
       '@types/node':
         specifier: ^26.5.1
         version: 26.5.1
@@ -495,6 +501,29 @@ packages:
       '@swc/helpers':
         optional: true
 
+  '@rstest/adapter-rslib@0.11.12':
+    resolution: {integrity: sha512-YIJ+4uTmTYCPWtsoePZ9nTsA9j0OVa24sM0nvwWig4inhKJi50Aa7+yd//N9CtQ0Gc608BJ5S5fo9w/DfCSWYA==}
+    peerDependencies:
+      '@rslib/core': '>=0.18.6 || ^1.0.0-0'
+      '@rstest/core': ^0.11.0
+      typescript: ^5.0.0 || ^6.0.0 || ^7.0.0
+    peerDependenciesMeta:
+      typescript:
+        optional: true
+
+  '@rstest/core@0.11.12':
+    resolution: {integrity: sha512-dklEYLtL1eip/11K+o3xEchEs2nCGua2u2W8Pycf6PS8TE0PDJH2Bn9y/txuQI4YVHyIQ88PISWtS6fVnxSyXQ==}
+    engines: {node: ^20.19.0 || >=22.12.0}
+    hasBin: true
+    peerDependencies:
+      happy-dom: ^20.8.3
+      jsdom: '>=15.0.0'
+    peerDependenciesMeta:
+      happy-dom:
+        optional: true
+      jsdom:
+        optional: true
+
   '@swc/helpers@0.5.23':
     resolution: {integrity: sha512-5lSsMOTXURePglDfvuAQUqkGek9Hg2kksOYay2m0+XR++b2NWYL/4sWyuvVBIs8oKnJaxkdi9whaL/sqN13afw==}
 
@@ -533,6 +562,12 @@ packages:
 
   '@tybys/wasm-util@0.10.3':
     resolution: {integrity: sha512-F3fo1MYrRJYL3zER0OUOmkutjr1Vp23m7OsSgp7nq4SP6OqX6C/56XFIPAl5bt3zaBRjmW7SGz3u/6LwFpYcOg==}
+
+  '@types/chai@5.2.3':
+    resolution: {integrity: sha512-Mw558oeA9fFbv65/y4mHtXDs9bPnFMZAL/jxdPFUpOHHIXX91mcgEHbS5Lahr+pwZFR8A7GQleRWeI6cGFC2UA==}
+
+  '@types/deep-eql@4.0.2':
+    resolution: {integrity: sha512-c9h9dVVMigMPc4bwTvC5dxqtqJZwQPePsWjPlpSOnojbor6pGqdk541lfA7AqFQr5pB1BRdq0juY9db81BwyFw==}
 
   '@types/node@26.5.1':
     resolution: {integrity: sha512-CzNm2FezW4VR/LjG6yUdiEgLE/rAQ9Slj5gCu/C2VrdcW7I0ahNZ8DRbHT7zOZ6r3ONgd/bsQIeSaoDGrd1C6g==}
@@ -689,6 +724,10 @@ packages:
   ansis@3.17.0:
     resolution: {integrity: sha512-0qWUglt9JEqLFr3w1I1pbrChn1grhaiAR2ocX1PP/flRmxgtwTzPFFFnfIlD6aMOLQZgSuCRlidD70lvx8yhzg==}
     engines: {node: '>=14'}
+
+  assertion-error@2.0.1:
+    resolution: {integrity: sha512-Izi8RQcffqCeNVgFigKli1ssklIbpHnCYc6AknXGYoB6grJqyeby7jv12JUQgmTAnIDnbck1uxksT4dzN3PWBA==}
+    engines: {node: '>=12'}
 
   balanced-match@4.0.4:
     resolution: {integrity: sha512-BLrgEcRTwX2o6gGxGOCNyMvGSp35YofuYzw9h1IMTRmKqttAZZVU67bdb9Pr2vUHA8+j3i2tJfjO6C6+4myGTA==}
@@ -1589,6 +1628,21 @@ snapshots:
     optionalDependencies:
       '@swc/helpers': 0.5.23
 
+  '@rstest/adapter-rslib@0.11.12(@rslib/core@1.0.0(core-js@3.44.0)(typescript@7.0.2))(@rstest/core@0.11.12(core-js@3.44.0))(typescript@7.0.2)':
+    dependencies:
+      '@rslib/core': 1.0.0(core-js@3.44.0)(typescript@7.0.2)
+      '@rstest/core': 0.11.12(core-js@3.44.0)
+    optionalDependencies:
+      typescript: 7.0.2
+
+  '@rstest/core@0.11.12(core-js@3.44.0)':
+    dependencies:
+      '@rsbuild/core': 2.2.5(core-js@3.44.0)
+      '@types/chai': 5.2.3
+    transitivePeerDependencies:
+      - '@module-federation/runtime-tools'
+      - core-js
+
   '@swc/helpers@0.5.23':
     dependencies:
       tslib: 2.8.1
@@ -1621,6 +1675,13 @@ snapshots:
     dependencies:
       tslib: 2.8.1
     optional: true
+
+  '@types/chai@5.2.3':
+    dependencies:
+      '@types/deep-eql': 4.0.2
+      assertion-error: 2.0.1
+
+  '@types/deep-eql@4.0.2': {}
 
   '@types/node@26.5.1':
     dependencies:
@@ -1712,6 +1773,8 @@ snapshots:
   ansi-styles@6.2.3: {}
 
   ansis@3.17.0: {}
+
+  assertion-error@2.0.1: {}
 
   balanced-match@4.0.4: {}
 
