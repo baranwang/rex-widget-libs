@@ -2,7 +2,7 @@
   "name": "rex-widget-template-ts",
   "version": "0.0.0",
   "devDependencies": {
-    "@types/node": "^22.16.0",
-    "typescript": "^5.8.3"
+    "@types/node": "^26.5.1",
+    "typescript": "^7.0.2"
   }
 }

@@ -20,8 +20,8 @@
   "devDependencies": {
     "@rexnow/libs": "workspace:*",
     "@rexnow/rslib-plugin": "workspace:*",
-    "@rslib/core": "^0.10.5",
-    "@types/node": "^22.16.0",
-    "typescript": "^5.8.3"
+    "@rslib/core": "^1.0.0",
+    "@types/node": "^26.5.1",
+    "typescript": "^7.0.2"
   }
 }

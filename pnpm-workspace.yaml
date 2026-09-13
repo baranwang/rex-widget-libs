@@ -3,3 +3,9 @@ packages:
   - "packages/rslib-plugin"
   - "packages/create-rex-widget"
   - "examples/*"
+overrides:
+  zod: 4.6.4
+allowBuilds:
+  core-js: false
+minimumReleaseAgeExclude:
+  - zod@4.6.4

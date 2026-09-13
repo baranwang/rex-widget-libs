@@ -19,6 +19,6 @@
   "devDependencies": {
     "@rexnow/libs": "workspace:*",
     "@rexnow/rslib-plugin": "workspace:*",
-    "@rslib/core": "^0.11.2"
+    "@rslib/core": "^1.0.0"
   }
 }
