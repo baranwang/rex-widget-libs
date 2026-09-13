@@ -1,4 +1,4 @@
-# create-forward-widget
+# create-rex-widget
 
 ## 2.1.0
 

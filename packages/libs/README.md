@@ -1,22 +1,22 @@
-# @forward-widget/libs
+# @rexnow/libs
 
-[![NPM Version](https://img.shields.io/npm/v/@forward-widget/libs)](https://www.npmjs.com/package/@forward-widget/libs)
-![NPM License](https://img.shields.io/npm/l/@forward-widget/libs)
+[![NPM Version](https://img.shields.io/npm/v/@rexnow/libs)](https://www.npmjs.com/package/@rexnow/libs)
+![NPM License](https://img.shields.io/npm/l/@rexnow/libs)
 
-> Forward Widget 开发工具库
+> Rex Widget 开发工具库
 
 ## 🚀 简介
 
-`@forward-widget/libs` 是一个专为 Forward Widget 开发者设计的工具库，提供了完整的类型定义和测试工具，帮助开发者更高效地构建和测试 Widget 应用。
+`@rexnow/libs` 是一个专为 Rex Widget 开发者设计的工具库，提供了完整的类型定义和测试工具，帮助开发者更高效地构建和测试 Widget 应用。
 
 ## 📦 安装
 
 ```bash
-npm install @forward-widget/libs
+npm install @rexnow/libs
 # 或
-yarn add @forward-widget/libs
+yarn add @rexnow/libs
 # 或
-pnpm add @forward-widget/libs
+pnpm add @rexnow/libs
 ```
 
 ## 🛠️ 使用方法
@@ -28,8 +28,8 @@ pnpm add @forward-widget/libs
 在你的项目中创建一个 `.d.ts` 文件，引入类型定义：
 
 ```ts
-// forward-widget-env.d.ts
-/// <reference types="@forward-widget/libs/env" />
+// rex-widget-env.d.ts
+/// <reference types="@rexnow/libs/env" />
 ```
 
 这样你就可以在 TypeScript 代码中获得完整的类型支持：
@@ -59,7 +59,7 @@ async function loadDetail(url: string) {
 
 ```js
 /**
- * @type {import('@forward-widget/libs/env')}
+ * @type {import('@rexnow/libs/env')}
  */
 
 
@@ -72,7 +72,7 @@ WidgetMetadata = {
 async function loadDetail(url) {
   const resp = await Widget.http.get('https://api.example.com/data')
   /**
-   * @type {import('@forward-widget/libs/env').VideoItem}
+   * @type {import('@rexnow/libs/env').VideoItem}
    */
   const result = {
     // ...
@@ -84,7 +84,7 @@ async function loadDetail(url) {
 
 ### 单元测试
 
-`@forward-widget/libs` 提供了 `WidgetAdaptor` 来模拟 Widget 运行环境，方便进行单元测试。
+`@rexnow/libs` 提供了 `WidgetAdaptor` 来模拟 Widget 运行环境，方便进行单元测试。
 
 以 [Rstest](http://rstest.rs/) 为例：
 
@@ -92,7 +92,7 @@ async function loadDetail(url) {
 import { expect, test, beforeAll } from "@rstest/core";
 
 beforeAll(async () => {
-  const { WidgetAdaptor } = await import("@forward-widget/libs/widget-adaptor");
+  const { WidgetAdaptor } = await import("@rexnow/libs/widget-adaptor");
   rstest.stubGlobal("Widget", WidgetAdaptor);
 });
 

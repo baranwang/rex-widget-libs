@@ -52,7 +52,7 @@ export const createDevServer = async (options: DevServerOptions) => {
 
   // 输出访问地址信息
   const localIPs = getLocalIPs();
-  api.logger.ready(`Forward Widget 插件已启动，监听地址`);
+  api.logger.ready(`Rex Widget 插件已启动，监听地址`);
   api.logger.info(`  http://localhost:${port}`);
 
   if (localIPs.length > 0) {

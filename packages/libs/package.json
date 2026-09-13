@@ -1,5 +1,5 @@
 {
-  "name": "@forward-widget/libs",
+  "name": "@rexnow/libs",
   "version": "2.1.0",
   "type": "module",
   "exports": {
@@ -32,7 +32,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/baranwang/forward-widget-libs.git",
+    "url": "https://github.com/baranwang/rex-widget-libs.git",
     "directory": "packages/libs"
   },
   "author": "baranwang",

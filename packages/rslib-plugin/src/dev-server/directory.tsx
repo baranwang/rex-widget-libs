@@ -44,7 +44,7 @@ export const Directory = ({ fileInfos }: DirectoryProps) => {
     <html lang="zh-CN">
       <head>
         <meta charset="utf-8" />
-        <title>Forward Widget - 文件列表</title>
+        <title>Rex Widget - 文件列表</title>
         <style>
           {`
             * { margin: 0; padding: 0; box-sizing: border-box; }

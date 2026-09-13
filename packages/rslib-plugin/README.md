@@ -1,27 +1,27 @@
-# @forward-widget/rslib-plugin
+# @rexnow/rslib-plugin
 
-[![NPM Version](https://img.shields.io/npm/v/@forward-widget/rslib-plugin)](https://www.npmjs.com/package/@forward-widget/rslib-plugin)
-![NPM License](https://img.shields.io/npm/l/@forward-widget/rslib-plugin)
+[![NPM Version](https://img.shields.io/npm/v/@rexnow/rslib-plugin)](https://www.npmjs.com/package/@rexnow/rslib-plugin)
+![NPM License](https://img.shields.io/npm/l/@rexnow/rslib-plugin)
 
-> Forward Widget 专用的 Rslib 构建插件
+> Rex Widget 专用的 Rslib 构建插件
 
 ## 🚀 简介
 
-`@forward-widget/rslib-plugin` 是一个专为 Forward Widget 开发优化的 Rslib 插件。它提供了以下核心功能：
+`@rexnow/rslib-plugin` 是一个专为 Rex Widget 开发优化的 Rslib 插件。它提供了以下核心功能：
 
 - 🔧 **自动类型生成**：根据 `WidgetMetadata` 自动生成 TypeScript 类型定义
-- 📦 **构建优化**：清除 Forward Widget 不支持的导出声明
+- 📦 **构建优化**：清除 Rex Widget 不支持的导出声明
 - 🛠️ **开发体验**：提供完整的类型支持和智能提示
 - 🔄 **热更新**：开发模式下自动重新生成类型定义
 
 ## 📦 安装
 
 ```bash
-npm install -D @forward-widget/rslib-plugin
+npm install -D @rexnow/rslib-plugin
 # 或
-yarn add -D @forward-widget/rslib-plugin
+yarn add -D @rexnow/rslib-plugin
 # 或
-pnpm add -D @forward-widget/rslib-plugin
+pnpm add -D @rexnow/rslib-plugin
 ```
 
 ## 🛠️ 使用方法
@@ -31,11 +31,11 @@ pnpm add -D @forward-widget/rslib-plugin
 在你的 `rslib.config.ts` 文件中添加插件：
 
 ```ts
-import { pluginForwardWidget } from '@forward-widget/rslib-plugin';
+import { pluginRexWidget } from '@rexnow/rslib-plugin';
 import { defineConfig } from '@rslib/core';
 
 export default defineConfig({
-  plugins: [pluginForwardWidget()],
+  plugins: [pluginRexWidget()],
   lib: [
     {
       format: 'esm',
@@ -49,12 +49,12 @@ export default defineConfig({
 ### 自定义配置
 
 ```ts
-import { pluginForwardWidget } from '@forward-widget/rslib-plugin';
+import { pluginRexWidget } from '@rexnow/rslib-plugin';
 import { defineConfig } from '@rslib/core';
 
 export default defineConfig({
   plugins: [
-    pluginForwardWidget({
+    pluginRexWidget({
       typesFilePath: 'src/custom-types.d.ts', // 自定义类型文件路径
     }),
   ],
@@ -72,7 +72,7 @@ export default defineConfig({
 
 | 选项 | 类型 | 默认值 | 描述 |
 |------|------|--------|------|
-| `typesFilePath` | `string` | `'src/forward-widget-env.d.ts'` | 生成的类型定义文件路径 |
+| `typesFilePath` | `string` | `'src/rex-widget-env.d.ts'` | 生成的类型定义文件路径 |
 
 ## 💡 工作原理
 
@@ -117,8 +117,8 @@ WidgetMetadata = {
 插件会根据 `WidgetMetadata` 自动生成相应的类型定义：
 
 ```ts
-// src/forward-widget-env.d.ts
-/// <reference types='@forward-widget/libs/env' />
+// src/rex-widget-env.d.ts
+/// <reference types='@rexnow/libs/env' />
 
 //#region search-module
 /**
@@ -152,7 +152,7 @@ type SearchContentType = typeof searchContent;
 
 ### 3. 清除导出声明
 
-插件会自动清除构建输出中的导出声明，因为 Forward Widget 不支持脚本有导出声明。
+插件会自动清除构建输出中的导出声明，因为 Rex Widget 不支持脚本有导出声明。
 
 ## 📚 完整示例
 
@@ -162,7 +162,7 @@ type SearchContentType = typeof searchContent;
 my-widget/
 ├── src/
 │   ├── index.ts                    # 主要逻辑
-│   └── forward-widget-env.d.ts     # 自动生成的类型定义
+│   └── rex-widget-env.d.ts     # 自动生成的类型定义
 ├── rslib.config.ts                 # 构建配置
 ├── package.json
 └── tsconfig.json
@@ -228,8 +228,8 @@ async function searchMovies(params: SearchMoviesParams): Promise<VideoItem[]> {
 ### 生成的类型定义
 
 ```ts
-// src/forward-widget-env.d.ts (自动生成)
-/// <reference types='@forward-widget/libs/env' />
+// src/rex-widget-env.d.ts (自动生成)
+/// <reference types='@rexnow/libs/env' />
 
 //#region search
 /**
@@ -295,9 +295,9 @@ pnpm dev
 
 ## 📚 相关文档
 
-- [@forward-widget/libs](../libs/README.md) - 核心工具库
-- [create-forward-widget](../create-forward-widget/README.md) - 脚手架工具
-- [Forward Widget 开发指南](https://docs.forward-widget.com)
+- [@rexnow/libs](../libs/README.md) - 核心工具库
+- [create-rex-widget](../create-rex-widget/README.md) - 脚手架工具
+- [Rex Widget 开发指南](https://docs.forward-widget.com)
 
 ## 🤝 贡献
 

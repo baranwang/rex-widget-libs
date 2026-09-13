@@ -1,5 +1,5 @@
 {
-  "name": "forward-widget-template-ts",
+  "name": "rex-widget-template-ts",
   "version": "0.0.0",
   "devDependencies": {
     "@types/node": "^22.16.0",

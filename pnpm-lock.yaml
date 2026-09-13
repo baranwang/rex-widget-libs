@@ -5,7 +5,7 @@ settings:
   excludeLinksFromLockfile: false
 
 overrides:
-  zod: 4.0.2
+  zod: 4.1.13
 
 importers:
 
@@ -23,10 +23,10 @@ importers:
 
   examples/rslib-plugin:
     devDependencies:
-      '@forward-widget/libs':
+      '@rexnow/libs':
         specifier: workspace:*
         version: link:../../packages/libs
-      '@forward-widget/rslib-plugin':
+      '@rexnow/rslib-plugin':
         specifier: workspace:*
         version: link:../../packages/rslib-plugin
       '@rslib/core':
@@ -39,7 +39,7 @@ importers:
         specifier: ^5.8.3
         version: 5.8.3
 
-  packages/create-forward-widget:
+  packages/create-rex-widget:
     dependencies:
       '@clack/prompts':
         specifier: ^0.11.0
@@ -51,10 +51,10 @@ importers:
         specifier: ^1.1.1
         version: 1.1.1
     devDependencies:
-      '@forward-widget/libs':
+      '@rexnow/libs':
         specifier: workspace:*
         version: link:../libs
-      '@forward-widget/rslib-plugin':
+      '@rexnow/rslib-plugin':
         specifier: workspace:*
         version: link:../rslib-plugin
       '@rslib/core':
@@ -95,8 +95,8 @@ importers:
         specifier: ^5.8.3
         version: 5.8.3
       zod:
-        specifier: 4.0.2
-        version: 4.0.2
+        specifier: 4.1.13
+        version: 4.1.13
 
   packages/rslib-plugin:
     dependencies:
@@ -113,7 +113,7 @@ importers:
         specifier: ^26.0.0
         version: 26.0.0
     devDependencies:
-      '@forward-widget/libs':
+      '@rexnow/libs':
         specifier: workspace:*
         version: link:../libs
       '@rsbuild/core':
@@ -129,8 +129,8 @@ importers:
         specifier: ^5.8.3
         version: 5.8.3
       zod:
-        specifier: 4.0.2
-        version: 4.0.2
+        specifier: 4.1.13
+        version: 4.1.13
 
 packages:
 
@@ -1313,8 +1313,8 @@ packages:
     resolution: {integrity: sha512-YVGIj2kamLSTxw6NsZjoBxfSwsn0ycdesmc4p+Q21c5zPuZ1pl+NfxVdxPtdHvmNVOQ6XSYG4AUtyt/Fi7D16Q==}
     engines: {node: '>=10'}
 
-  zod@4.0.2:
-    resolution: {integrity: sha512-X2niJNY54MGam4L6Kj0AxeedeDIi/E5QFW0On2faSX5J4/pfLk1tW+cRMIMoojnCavn/u5W/kX17e1CSGnKMxA==}
+  zod@4.1.13:
+    resolution: {integrity: sha512-AvvthqfqrAhNH9dnfmrfKzX5upOdjUVJYFqNSlkmGf64gRaTzlPwz99IHYnVs28qYAybvAlBV+H7pn0saFY4Ig==}
 
 snapshots:
 
@@ -2453,7 +2453,7 @@ snapshots:
       tslib: 2.8.1
       tsutils: 3.21.0(typescript@5.8.3)
       typescript: 5.8.3
-      zod: 4.0.2
+      zod: 4.1.13
     transitivePeerDependencies:
       - supports-color
 
@@ -2547,4 +2547,4 @@ snapshots:
       string-width: 4.2.3
       strip-ansi: 6.0.1
 
-  zod@4.0.2: {}
+  zod@4.1.13: {}

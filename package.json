@@ -1,5 +1,5 @@
 {
-  "name": "forward-widget-libs",
+  "name": "rex-widget-libs",
   "private": true,
   "scripts": {
     "dev": "turbo run dev --filter=!@examples/*",

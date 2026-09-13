@@ -112,13 +112,13 @@ async function main() {
   console.clear();
   const cwd = process.cwd();
 
-  intro(color.cyan(color.bold('Create Forward Widget')));
+  intro(color.cyan(color.bold('Create Rex Widget')));
 
   const projectName = checkCancel<string>(
     await text({
       message: 'Project name or path',
-      placeholder: 'forward-widget-project',
-      defaultValue: 'forward-widget-project',
+      placeholder: 'rex-widget-project',
+      defaultValue: 'rex-widget-project',
       validate: (value) => {
         if (value.length === 0) {
           return 'Project name is required';
