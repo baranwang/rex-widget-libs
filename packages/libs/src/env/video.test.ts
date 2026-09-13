@@ -82,3 +82,24 @@ test('VideoItem adds episodeItems and relatedItems', () => {
   expect(item.getProperty('episodeItems')?.hasQuestionToken()).toBe(true);
   expect(item.getProperty('relatedItems')?.hasQuestionToken()).toBe(true);
 });
+
+test('loadDetail may return a VideoItem, an array, or null without requiring videoUrl', () => {
+  const loadDetail = loadEnvSource('video.ts').getVariableDeclarationOrThrow('loadDetail');
+  const typeNode = loadDetail.getTypeNode();
+  expect(typeNode).toBeDefined();
+
+  if (typeNode === undefined) {
+    throw new Error('missing loadDetail type node');
+  }
+
+  expect(typeNode.getText()).toBe('(link: string) => Promise<VideoItem | VideoItem[] | null>');
+});
+
+test('VideoListParams carries implicit genreId and peopleId', () => {
+  const params = getInterface('VideoListParams');
+
+  expect(getPropertyTypeText(params, 'genreId')).toBe('string');
+  expect(getPropertyTypeText(params, 'peopleId')).toBe('string');
+  expect(params.getProperty('genreId')?.hasQuestionToken()).toBe(true);
+  expect(params.getProperty('peopleId')?.hasQuestionToken()).toBe(true);
+});

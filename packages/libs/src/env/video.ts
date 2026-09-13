@@ -84,4 +84,14 @@ interface VideoItem extends VideoItemChild {
   relatedItems?: VideoItem[];
 }
 
-declare let loadDetail: (link: string) => Promise<Omit<VideoItem, 'videoUrl'> & Pick<Required<VideoItem>, 'videoUrl'>>;
+/**
+ * 列表模块隐式参数。从详情页分类或人物进入列表时由客户端注入。
+ */
+interface VideoListParams {
+  /** 分类 ID，对应 genreItems[].id */
+  genreId?: string;
+  /** 人物 ID，对应 peoples[].id */
+  peopleId?: string;
+}
+
+declare let loadDetail: (link: string) => Promise<VideoItem | VideoItem[] | null>;
