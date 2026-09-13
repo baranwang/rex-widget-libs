@@ -31,3 +31,22 @@ test('generated env.zod evaluates and has no empty imports or record.partial()',
     fs.unlinkSync(file);
   }
 });
+
+test('widgetMetadataSchema accepts unknown i18n locale keys', async () => {
+  const source = generateEnvZodSource(envDir);
+  const file = path.join(path.dirname(fileURLToPath(import.meta.url)), '.tmp-env-zod-i18n.js');
+  fs.writeFileSync(file, source);
+
+  try {
+    const mod = await import(`${pathToFileURL(file).href}?t=${Date.now()}`);
+    const result = mod.widgetMetadataSchema.safeParse({
+      id: 'demo',
+      title: 'Demo',
+      modules: [],
+      i18n: { de: { hello: 'Hallo' } },
+    });
+    expect(result.success).toBe(true);
+  } finally {
+    fs.unlinkSync(file);
+  }
+});

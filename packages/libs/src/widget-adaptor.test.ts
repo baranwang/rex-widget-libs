@@ -54,6 +54,31 @@ test('WidgetAdaptor.http.request posts JSON from data', async () => {
   );
 });
 
+test.each([
+  { data: 0, body: '0' },
+  { data: '', body: '' },
+  { data: false, body: 'false' },
+])('WidgetAdaptor.http.request posts defined falsy data $data', async ({ data, body }) => {
+  const fetchMock = rs.fn(async (_input: RequestInfo | URL, _init?: RequestInit) => {
+    return new Response(JSON.stringify({ ok: true }), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  });
+
+  rs.stubGlobal('fetch', fetchMock);
+
+  await WidgetAdaptor.http.request({
+    url: 'https://example.com/api/v2/match',
+    method: 'POST',
+    data,
+  });
+
+  expect(fetchMock).toHaveBeenCalledTimes(1);
+  const [, init] = fetchMock.mock.calls[0] ?? [];
+  expect(init?.body).toBe(body);
+});
+
 test('WidgetAdaptor.sharedCache get/set/remove are namespaced', () => {
   const namespace = 'rstest.widget-adaptor';
   const key = 'featured';

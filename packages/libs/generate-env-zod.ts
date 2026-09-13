@@ -37,5 +37,6 @@ export function sanitizeEnvZodSource(source: string): string {
     .replace(
       'z.record(widgetI18nLocaleSchema, z.record(z.string(), z.string())).partial()',
       'z.record(widgetI18nLocaleSchema, z.record(z.string(), z.string()))',
-    );
+    )
+    .replace('z.string().and(z.object({}))', 'z.string()');
 }
