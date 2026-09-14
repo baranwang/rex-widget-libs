@@ -1,5 +1,11 @@
 # @rexnow/libs
 
+## 3.0.1
+
+### Patch Changes
+
+- e70acc5: Request Rspack assets in getOutputFiles so after-build still strips exports and generates types.
+
 ## 3.0.0
 
 ### Major Changes
