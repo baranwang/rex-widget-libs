@@ -1,5 +1,11 @@
 # @rexnow/rslib-plugin
 
+## 3.1.2
+
+### Patch Changes
+
+- 5d67b0c: Merge generated widget declarations when multiple modules share the same functionName.
+
 ## 3.1.1
 
 ### Patch Changes
