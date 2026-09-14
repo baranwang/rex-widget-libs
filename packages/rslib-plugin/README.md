@@ -161,7 +161,7 @@ type SearchContentType = typeof searchContent;
 
 设置 `encrypt: true` 后，插件会在类型生成完成之后，把构建出的 `.js` 发送到 `https://api.rexnow.tv/api/widgets/encrypt`，并用返回的 `REXENC` 信封覆盖产物。协议与 [rexnow.tv/encrypt](https://rexnow.tv/encrypt/) 一致：`AES-256-GCM`（`A256GCM` / `rex-1`），加密结果仅供 Rex 使用。
 
-请保留未加密的源码。加密不会在 `rslib build --watch` 时执行，以免开发服务器读到密文。大文件可能需要 1–2 分钟；超过 2 MiB 或已经是 `REXENC` / `FWENC` 的文件会被拒绝。
+请保留未加密的源码。加密不会在 `rslib build --watch` 时执行，以免开发服务器读到密文。构建机需要能访问 `api.rexnow.tv`；加密失败会使生产构建失败。大文件可能需要 1–2 分钟；超过 2 MiB 或已经是 `REXENC` / `FWENC` 的文件会被拒绝。不要同时发布未加密的 source map。
 
 ## 📚 完整示例
 

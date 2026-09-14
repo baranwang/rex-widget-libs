@@ -131,6 +131,23 @@ test('encrypt:true skips watch rebuilds', async () => {
   expect(fs.readFileSync(outputFile, 'utf-8')).toBe(widgetSource);
 });
 
+test('encrypt:true fails the build when the encrypt service rejects the module', async () => {
+  const { rootPath, distPath, outputFile } = writeWidgetProject();
+
+  globalThis.fetch = (async () => new Response('nope', { status: 400 })) as typeof fetch;
+
+  const afterBuild = await setupPlugin(rootPath, { encrypt: true });
+  await expect(
+    afterBuild?.({
+      stats: createRspackNormalPresetStats(distPath, ['widget.js']),
+      isWatch: false,
+      isFirstCompile: false,
+    }),
+  ).rejects.toThrow('服务无法识别这个模块，请检查源码。');
+
+  expect(fs.readFileSync(outputFile, 'utf-8')).toBe(widgetSource);
+});
+
 test('encrypt defaults to off', async () => {
   const { rootPath, distPath, outputFile } = writeWidgetProject();
   let called = false;

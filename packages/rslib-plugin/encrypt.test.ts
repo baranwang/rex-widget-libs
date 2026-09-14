@@ -51,6 +51,18 @@ test('encryptWidgetSource posts source to the official encrypt endpoint', async 
   expect(calls[0]?.init?.method).toBe('POST');
   expect(calls[0]?.init?.headers).toMatchObject({ 'Content-Type': 'text/plain; charset=utf-8' });
   expect(calls[0]?.init?.body).toBe(source);
+  expect(calls[0]?.init?.cache).toBe('no-store');
+  expect(calls[0]?.init?.credentials).toBe('omit');
+});
+
+test('encryptWidgetSource maps a failed fetch to the official network message', async () => {
+  globalThis.fetch = (async () => {
+    throw new TypeError('fetch failed');
+  }) as typeof fetch;
+
+  await expect(encryptWidgetSource('WidgetMetadata = { id: "x" };')).rejects.toThrow(
+    '无法连接加密服务，请检查网络后重试。',
+  );
 });
 
 test('encryptWidgetSource maps HTTP 400 to the official client message', async () => {

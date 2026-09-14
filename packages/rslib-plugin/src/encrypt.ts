@@ -59,6 +59,7 @@ export async function encryptWidgetSource(source: string): Promise<string> {
       headers: { 'Content-Type': 'text/plain; charset=utf-8' },
       body: source,
       signal: controller.signal,
+      credentials: 'omit',
       cache: 'no-store',
     });
 
@@ -72,6 +73,9 @@ export async function encryptWidgetSource(source: string): Promise<string> {
   } catch (error) {
     if (error instanceof Error && error.name === 'AbortError') {
       throw new Error('等待已超时，请稍后重试。');
+    }
+    if (error instanceof TypeError) {
+      throw new Error('无法连接加密服务，请检查网络后重试。');
     }
     throw error;
   } finally {

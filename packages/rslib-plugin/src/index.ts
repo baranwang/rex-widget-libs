@@ -4,7 +4,7 @@ import { widgetMetadataSchema } from "@rexnow/libs/env.zod";
 import type { RsbuildPlugin, RsbuildPluginAPI, Rspack } from "@rsbuild/core";
 import { camelCase, upperFirst } from "es-toolkit";
 import { Node, Project, type SourceFile, SyntaxKind } from "ts-morph";
-import { encryptWidgetSource, isEncryptedWidget } from "./encrypt";
+import { encryptWidgetSource } from "./encrypt";
 import { generateDanmuModuleInterfaces } from "./generators/danmu";
 import { generateStreamModuleInterface } from "./generators/stream";
 import { generateSubtitleModuleInterface } from "./generators/subtitle";
@@ -209,10 +209,6 @@ async function encryptOutputFiles(api: RsbuildPluginAPI, outputFiles: string[]):
 
   for (const file of jsFiles) {
     const source = await fs.promises.readFile(file, "utf-8");
-    if (isEncryptedWidget(source)) {
-      continue;
-    }
-
     api.logger.info(`正在加密 ${path.basename(file)}…`);
     const encrypted = await encryptWidgetSource(source);
     await fs.promises.writeFile(file, encrypted);
