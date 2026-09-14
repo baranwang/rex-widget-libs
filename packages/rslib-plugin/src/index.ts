@@ -33,6 +33,12 @@ interface RexWidgetPluginOptions {
   encrypt?: boolean;
 }
 
+// Rslib ESM 会把 `export const WidgetMetadata` 打成 `const WidgetMetadata = …`。
+// 解析时再包一层 `let WidgetMetadata` 会 SyntaxError: already been declared。
+function toExecutableWidgetMetadataSource(content: string): string {
+  return content.replace(/\b(?:export\s+)?(?:const|let|var)\s+WidgetMetadata\b/g, 'WidgetMetadata');
+}
+
 // 元数据解析工具
 function safeParseWidgetMetadataFactory(api: RsbuildPluginAPI) {
   /**
@@ -46,7 +52,7 @@ function safeParseWidgetMetadataFactory(api: RsbuildPluginAPI) {
         "sandbox",
         `
         let WidgetMetadata;
-        ${content};
+        ${toExecutableWidgetMetadataSource(content)};
         sandbox.WidgetMetadata = WidgetMetadata;
       `,
       );
