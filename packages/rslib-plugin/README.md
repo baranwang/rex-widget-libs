@@ -11,6 +11,7 @@
 
 - 🔧 **自动类型生成**：根据 `WidgetMetadata` 自动生成 TypeScript 类型定义
 - 📦 **构建优化**：清除 Rex Widget 不支持的导出声明
+- 🔐 **模块加密**：可选调用 Rex 官方加密服务，将产物写成 `REXENC` 格式
 - 🛠️ **开发体验**：提供完整的类型支持和智能提示
 - 🔄 **热更新**：开发模式下自动重新生成类型定义
 
@@ -56,6 +57,7 @@ export default defineConfig({
   plugins: [
     pluginRexWidget({
       typesFilePath: 'src/custom-types.d.ts', // 自定义类型文件路径
+      encrypt: true, // 生产构建后加密 JS 产物
     }),
   ],
   lib: [
@@ -73,6 +75,7 @@ export default defineConfig({
 | 选项 | 类型 | 默认值 | 描述 |
 |------|------|--------|------|
 | `typesFilePath` | `string` | `'src/rex-widget-env.d.ts'` | 生成的类型定义文件路径 |
+| `encrypt` | `boolean` | `false` | 生产构建后调用 [Rex 模块加密](https://rexnow.tv/encrypt/) 服务，将 JS 产物写成 `REXENC` 格式。`watch` 开发监听时不会加密。 |
 
 ## 💡 工作原理
 
@@ -153,6 +156,12 @@ type SearchContentType = typeof searchContent;
 ### 3. 清除导出声明
 
 插件会自动清除构建输出中的导出声明，因为 Rex Widget 不支持脚本有导出声明。
+
+### 4. 模块加密
+
+设置 `encrypt: true` 后，插件会在类型生成完成之后，把构建出的 `.js` 发送到 `https://api.rexnow.tv/api/widgets/encrypt`，并用返回的 `REXENC` 信封覆盖产物。协议与 [rexnow.tv/encrypt](https://rexnow.tv/encrypt/) 一致：`AES-256-GCM`（`A256GCM` / `rex-1`），加密结果仅供 Rex 使用。
+
+请保留未加密的源码。加密不会在 `rslib build --watch` 时执行，以免开发服务器读到密文。构建机需要能访问 `api.rexnow.tv`；加密失败会使生产构建失败。大文件可能需要 1–2 分钟；超过 2 MiB 或已经是 `REXENC` / `FWENC` 的文件会被拒绝。不要同时发布未加密的 source map。
 
 ## 📚 完整示例
 
