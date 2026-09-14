@@ -61,7 +61,7 @@ interface VideoItemChild {
   /** 视频播放地址 */
   videoUrl?: string;
   /** 详情页地址 */
-  link: string;
+  link?: string;
   /** 集数 */
   episode?: number;
   /** 描述 */
