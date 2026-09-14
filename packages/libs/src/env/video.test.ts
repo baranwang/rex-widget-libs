@@ -65,6 +65,7 @@ test('VideoItemChild includes official cover fields and nested models', () => {
   expect(getPropertyTypeText(child, 'peoples')).toBe('PersonItem[]');
   expect(getPropertyTypeText(child, 'trailers')).toBe('TrailerItem[]');
   expect(getPropertyTypeText(child, 'backdropPaths')).toBe('string[]');
+  expect(getPropertyTypeText(child, 'link')).toBe('string');
 
   expect(child.getProperty('coverUrl')?.hasQuestionToken()).toBe(true);
   expect(child.getProperty('detailPoster')?.hasQuestionToken()).toBe(true);
@@ -72,6 +73,7 @@ test('VideoItemChild includes official cover fields and nested models', () => {
   expect(child.getProperty('peoples')?.hasQuestionToken()).toBe(true);
   expect(child.getProperty('trailers')?.hasQuestionToken()).toBe(true);
   expect(child.getProperty('backdropPaths')?.hasQuestionToken()).toBe(true);
+  expect(child.getProperty('link')?.hasQuestionToken()).toBe(true);
 });
 
 test('VideoItem adds episodeItems and relatedItems', () => {
