@@ -1,6 +1,6 @@
 import type { SourceFile, WriterFunction } from "ts-morph";
 import { StructureKind } from "ts-morph";
-import { generateModuleFunctionType, generateTypeName } from "../utils";
+import { generateTypeName } from "../utils";
 
 /**
  * 获取弹幕模块的返回类型扩展
@@ -21,13 +21,18 @@ function getReturnTypeExtends(moduleId: string): WriterFunction | undefined {
 /**
  * 生成弹幕模块接口
  */
-export function generateDanmuModuleInterfaces(nameSpaceName: string, sourceFile: SourceFile, module: WidgetModule) {
+export function generateDanmuModuleInterfaces(
+  nameSpaceName: string,
+  sourceFile: SourceFile,
+  module: WidgetModule,
+  typeNames = generateTypeName(module),
+) {
   if (module.type !== "danmu") {
     return;
   }
 
   const { id, title } = module;
-  const { paramsTypeName, returnTypeName } = generateTypeName(module);
+  const { paramsTypeName, returnTypeName } = typeNames;
 
   sourceFile.addInterface({
     name: paramsTypeName,
@@ -65,6 +70,4 @@ export function generateDanmuModuleInterfaces(nameSpaceName: string, sourceFile:
           ]
         : [],
   });
-
-  generateModuleFunctionType(sourceFile, module);
 }
