@@ -4,6 +4,7 @@ import { widgetMetadataSchema } from "@rexnow/libs/env.zod";
 import type { RsbuildPlugin, RsbuildPluginAPI, Rspack } from "@rsbuild/core";
 import { camelCase, upperFirst } from "es-toolkit";
 import { Node, Project, type SourceFile, SyntaxKind } from "ts-morph";
+import { encryptWidgetSource, isEncryptedWidget } from "./encrypt";
 import { generateDanmuModuleInterfaces } from "./generators/danmu";
 import { generateStreamModuleInterface } from "./generators/stream";
 import { generateSubtitleModuleInterface } from "./generators/subtitle";
@@ -23,6 +24,13 @@ interface RexWidgetPluginOptions {
    * @default 8000
    */
   devPort?: number;
+
+  /**
+   * 生产构建后调用 Rex 加密服务，将 JS 产物写成 REXENC 格式。
+   * watch / 开发监听时不会加密。
+   * @default false
+   */
+  encrypt?: boolean;
 }
 
 // 元数据解析工具
@@ -196,6 +204,22 @@ async function addSpaceToWidgetMetadata(distPath: string): Promise<void> {
 }
 
 // 构建处理工具
+async function encryptOutputFiles(api: RsbuildPluginAPI, outputFiles: string[]): Promise<void> {
+  const jsFiles = outputFiles.filter((file) => file.endsWith(".js"));
+
+  for (const file of jsFiles) {
+    const source = await fs.promises.readFile(file, "utf-8");
+    if (isEncryptedWidget(source)) {
+      continue;
+    }
+
+    api.logger.info(`正在加密 ${path.basename(file)}…`);
+    const encrypted = await encryptWidgetSource(source);
+    await fs.promises.writeFile(file, encrypted);
+    api.logger.info(`已加密 ${path.basename(file)}`);
+  }
+}
+
 /**
  * 处理构建后的逻辑
  */
@@ -203,6 +227,7 @@ async function processAfterBuild(
   api: RsbuildPluginAPI,
   stats: Rspack.Stats | Rspack.MultiStats | undefined,
   dtsPath: string,
+  options: { encrypt?: boolean; isWatch?: boolean } = {},
 ): Promise<void> {
   const outputFiles = getOutputFiles(api, stats);
 
@@ -225,6 +250,10 @@ async function processAfterBuild(
   );
 
   await typeDefFile.save();
+
+  if (options.encrypt && !options.isWatch) {
+    await encryptOutputFiles(api, outputFiles);
+  }
 }
 
 function getOutputFiles(api: RsbuildPluginAPI, stats: Rspack.Stats | Rspack.MultiStats | undefined): string[] {
@@ -255,6 +284,7 @@ async function setupTypeDefinitionFile(dtsPath: string): Promise<SourceFile> {
 export const pluginRexWidget = ({
   typesFilePath = "src/rex-widget-env.d.ts",
   devPort = 8000,
+  encrypt = false,
 }: RexWidgetPluginOptions = {}): RsbuildPlugin => ({
   name: "plugin-rex-widget",
 
@@ -269,9 +299,12 @@ export const pluginRexWidget = ({
 
     api.onAfterBuild(async ({ stats, isWatch, isFirstCompile }) => {
       try {
-        await processAfterBuild(api, stats, dtsPath);
+        await processAfterBuild(api, stats, dtsPath, { encrypt, isWatch });
       } catch (error) {
         api.logger.error("Rex Widget 插件处理失败", error);
+        if (encrypt && !isWatch) {
+          throw error;
+        }
       }
 
       try {
