@@ -1,5 +1,15 @@
 # @rexnow/libs
 
+## 3.1.0
+
+### Minor Changes
+
+- 0276b5c: Add optional Rex module encryption after production builds via the official encrypt API.
+
+### Patch Changes
+
+- ce150a8: Parse rslib `const WidgetMetadata` bundles when generating widget types.
+
 ## 3.0.1
 
 ### Patch Changes
