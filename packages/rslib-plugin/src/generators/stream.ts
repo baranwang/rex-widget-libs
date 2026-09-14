@@ -1,9 +1,14 @@
 import type { SourceFile } from "ts-morph";
 import { StructureKind } from "ts-morph";
-import { generateModuleFunctionType, generateParamType, generateTypeName } from "../utils";
+import { generateParamType, generateTypeName } from "../utils";
 
-export function generateStreamModuleInterface(nameSpaceName: string, sourceFile: SourceFile, module: WidgetModule) {
-  const { paramsTypeName, returnTypeName } = generateTypeName(module);
+export function generateStreamModuleInterface(
+  nameSpaceName: string,
+  sourceFile: SourceFile,
+  module: WidgetModule,
+  typeNames = generateTypeName(module),
+) {
+  const { paramsTypeName, returnTypeName } = typeNames;
 
   sourceFile.addInterface({
     name: paramsTypeName,
@@ -31,6 +36,4 @@ export function generateStreamModuleInterface(nameSpaceName: string, sourceFile:
       }
     },
   });
-
-  generateModuleFunctionType(sourceFile, module);
 }

@@ -57,9 +57,13 @@ export function generateParamType(param: WidgetModuleParam): OptionalKind<Proper
   };
 }
 
-export function generateTypeName(module: WidgetModule) {
-  const paramsTypeName = toPascalCase(`${module.functionName}Params`);
-  const returnTypeName = toPascalCase(`${module.functionName}ReturnType`);
+export function generateTypeName(module: WidgetModule, distinct = false) {
+  const paramsTypeName = distinct
+    ? `${toPascalCase(module.id)}${toPascalCase(module.functionName)}Params`
+    : toPascalCase(`${module.functionName}Params`);
+  const returnTypeName = distinct
+    ? `${toPascalCase(module.id)}${toPascalCase(module.functionName)}ReturnType`
+    : toPascalCase(`${module.functionName}ReturnType`);
   return {
     paramsTypeName,
     returnTypeName,

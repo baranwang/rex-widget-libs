@@ -1,9 +1,44 @@
+import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import type { RsbuildPluginAPI, Rspack } from '@rsbuild/core';
 import { afterEach, expect, test } from '@rstest/core';
 import { pluginRexWidget } from './src/index';
+
+function assertDtsTypechecks(dts: string) {
+  const dir = fs.mkdtempSync(path.join(process.cwd(), 'node_modules', '.tmp-dts-'));
+  try {
+    fs.writeFileSync(path.join(dir, 'rex-widget-env.d.ts'), dts);
+    fs.writeFileSync(
+      path.join(dir, 'tsconfig.json'),
+      JSON.stringify({
+        compilerOptions: {
+          noEmit: true,
+          strict: true,
+          skipLibCheck: false,
+          module: 'ESNext',
+          moduleResolution: 'bundler',
+          types: [],
+        },
+        files: ['./rex-widget-env.d.ts'],
+      }),
+    );
+    const result = spawnSync(
+      path.join(process.cwd(), 'node_modules', '.bin', 'tsc'),
+      ['-p', dir, '--pretty', 'false'],
+      {
+        encoding: 'utf8',
+        cwd: process.cwd(),
+      },
+    );
+    expect(result.error).toBeUndefined();
+    expect(`${result.stdout}${result.stderr}`.trim()).toBe('');
+    expect(result.status).toBe(0);
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+}
 
 function createRspackNormalPresetStats(outputPath: string, assetNames: string[]): Rspack.Stats {
   return {
@@ -98,6 +133,43 @@ test('generates types from assignment WidgetMetadata', async () => {
   expect(errors.join('\n')).not.toMatch(/already been declared/);
   expect(dts).toContain('DoubanBridge');
   expect(dts).toContain('loadGenreCatalog');
+  expect(dts).toContain('interface LoadGenreCatalogParams');
+  expect(dts.match(/declare let loadGenreCatalog/g)).toHaveLength(1);
+  assertDtsTypechecks(dts);
+});
+
+test('merges declarations when modules share functionName', async () => {
+  const { dts, errors } = await generateTypesFromOutput(`WidgetMetadata = {
+  id: 'example',
+  title: 'Example',
+  modules: [
+    {
+      id: 'movies',
+      title: 'Movies',
+      functionName: 'loadCatalog',
+      params: [
+        { name: 'collectionId', title: 'Collection', type: 'constant', value: 'movies' },
+      ],
+    },
+    {
+      id: 'shows',
+      title: 'Shows',
+      functionName: 'loadCatalog',
+      params: [
+        { name: 'collectionId', title: 'Collection', type: 'constant', value: 'shows' },
+      ],
+    },
+  ],
+};
+`);
+
+  expect(errors).toEqual([]);
+  expect(dts.match(/declare let loadCatalog/g)).toHaveLength(1);
+  expect(dts.match(/interface LoadCatalogParams/g) ?? []).toHaveLength(0);
+  expect(dts).toMatch(/collectionId:\s*'movies'/);
+  expect(dts).toMatch(/collectionId:\s*'shows'/);
+  expect(dts).toContain('type LoadCatalogParams');
+  assertDtsTypechecks(dts);
 });
 
 test('generates types from rslib const WidgetMetadata plus Object.assign(globalThis)', async () => {

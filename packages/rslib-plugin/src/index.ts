@@ -9,7 +9,7 @@ import { generateDanmuModuleInterfaces } from "./generators/danmu";
 import { generateStreamModuleInterface } from "./generators/stream";
 import { generateSubtitleModuleInterface } from "./generators/subtitle";
 import { generateVideoModuleInterface } from "./generators/video";
-import { generateParamType } from "./utils";
+import { generateModuleFunctionType, generateParamType, generateTypeName } from "./utils";
 
 // 类型定义
 interface RexWidgetPluginOptions {
@@ -93,6 +93,7 @@ function generateFunctionTypesFactory(api: RsbuildPluginAPI, sourceFile: SourceF
       const nameSpaceName = upperFirst(camelCase(widgetMetadataObject.id));
       const nameSpace = sourceFile.addModule({
         name: nameSpaceName,
+        hasDeclareKeyword: true,
       });
       nameSpace.addInterface({
         name: "GlobalParams",
@@ -107,29 +108,62 @@ function generateFunctionTypesFactory(api: RsbuildPluginAPI, sourceFile: SourceF
 }
 
 function generateModuleInterfaces(nameSpaceName: string, sourceFile: SourceFile, modules: WidgetModule[]): void {
+  const modulesByFunctionName = new Map<string, WidgetModule[]>();
+  for (const module of modules) {
+    const group = modulesByFunctionName.get(module.functionName);
+    if (group) {
+      group.push(module);
+    } else {
+      modulesByFunctionName.set(module.functionName, [module]);
+    }
+  }
+
   for (const module of modules) {
     const { id, type: moduleType } = module;
+    const shared = (modulesByFunctionName.get(module.functionName)?.length ?? 0) > 1;
+    const typeNames = generateTypeName(module, shared);
 
     // 添加区域注释
     sourceFile.addStatements(`\n//#region ${id}`);
 
     switch (moduleType) {
       case "danmu":
-        generateDanmuModuleInterfaces(nameSpaceName, sourceFile, module);
+        generateDanmuModuleInterfaces(nameSpaceName, sourceFile, module, typeNames);
         break;
       case "stream":
-        generateStreamModuleInterface(nameSpaceName, sourceFile, module);
+        generateStreamModuleInterface(nameSpaceName, sourceFile, module, typeNames);
         break;
       case "subtitle":
-        generateSubtitleModuleInterface(nameSpaceName, sourceFile, module);
+        generateSubtitleModuleInterface(nameSpaceName, sourceFile, module, typeNames);
         break;
       default:
         // 没有 type 或 type 不是 'danmu' 的都是 video 类型
-        generateVideoModuleInterface(nameSpaceName, sourceFile, module);
+        generateVideoModuleInterface(nameSpaceName, sourceFile, module, typeNames);
         break;
     }
 
+    if (!shared) {
+      generateModuleFunctionType(sourceFile, module);
+    }
+
     sourceFile.addStatements(`//#endregion ${id}`);
+  }
+
+  for (const group of modulesByFunctionName.values()) {
+    if (group.length < 2) {
+      continue;
+    }
+
+    const { paramsTypeName, returnTypeName } = generateTypeName(group[0]);
+    sourceFile.addTypeAlias({
+      name: paramsTypeName,
+      type: group.map((module) => generateTypeName(module, true).paramsTypeName).join(" | "),
+    });
+    sourceFile.addTypeAlias({
+      name: returnTypeName,
+      type: group.map((module) => generateTypeName(module, true).returnTypeName).join(" | "),
+    });
+    generateModuleFunctionType(sourceFile, group[0]);
   }
 }
 
