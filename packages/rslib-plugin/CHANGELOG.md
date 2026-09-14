@@ -1,5 +1,11 @@
 # @rexnow/rslib-plugin
 
+## 3.1.1
+
+### Patch Changes
+
+- f08f58c: Make `VideoItemChild.link` optional so items without a detail page URL are valid.
+
 ## 3.1.0
 
 ### Minor Changes
