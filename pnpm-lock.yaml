@@ -289,6 +289,12 @@ importers:
       '@rslib/core':
         specifier: ^1.0.0
         version: 1.0.0(core-js@3.44.0)(typescript@7.0.2)
+      '@rstest/adapter-rslib':
+        specifier: ^0.11.12
+        version: 0.11.12(@rslib/core@1.0.0(core-js@3.44.0)(typescript@7.0.2))(@rstest/core@0.11.12(core-js@3.44.0))(typescript@7.0.2)
+      '@rstest/core':
+        specifier: ^0.11.12
+        version: 0.11.12(core-js@3.44.0)
       '@types/node':
         specifier: ^26.5.1
         version: 26.5.1
