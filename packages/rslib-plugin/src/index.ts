@@ -228,7 +228,7 @@ async function processAfterBuild(
 }
 
 function getOutputFiles(api: RsbuildPluginAPI, stats: Rspack.Stats | Rspack.MultiStats | undefined): string[] {
-  const buildStats = stats?.toJson(true);
+  const buildStats = stats?.toJson({ assets: true, outputPath: true });
   const outputDir = buildStats?.outputPath || api.context.distPath;
   const outputFiles = buildStats?.assets?.map((asset) => path.resolve(outputDir, asset.name));
 
