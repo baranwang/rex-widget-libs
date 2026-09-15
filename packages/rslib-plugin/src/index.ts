@@ -39,6 +39,44 @@ function toExecutableWidgetMetadataSource(content: string): string {
   return content.replace(/\b(?:export\s+)?(?:const|let|var)\s+WidgetMetadata\b/g, 'WidgetMetadata');
 }
 
+const parseTimeWidgetRequest = async () => ({
+  data: undefined,
+  statusCode: 0,
+  headers: {},
+});
+
+/**
+ * 解析 WidgetMetadata 时注入的 Rex 宿主全局 Widget。
+ * 避免用户代码在模块顶层使用 Widget 时抛出 ReferenceError。
+ */
+function createParseTimeWidget() {
+  return {
+    http: {
+      get: parseTimeWidgetRequest,
+      post: parseTimeWidgetRequest,
+      request: parseTimeWidgetRequest,
+    },
+    tmdb: {
+      get: async () => undefined,
+    },
+    html: {
+      load: async () => undefined,
+    },
+    storage: {
+      get: async () => null,
+      set: async () => undefined,
+      remove: async () => undefined,
+      keys: async () => [],
+      clear: async () => undefined,
+    },
+    sharedCache: {
+      get: () => null,
+      set: () => undefined,
+      remove: () => undefined,
+    },
+  };
+}
+
 // 元数据解析工具
 function safeParseWidgetMetadataFactory(api: RsbuildPluginAPI) {
   /**
@@ -50,6 +88,7 @@ function safeParseWidgetMetadataFactory(api: RsbuildPluginAPI) {
       const sandbox = { WidgetMetadata: null as WidgetMetadata | null };
       const func = new Function(
         "sandbox",
+        "Widget",
         `
         let WidgetMetadata;
         ${toExecutableWidgetMetadataSource(content)};
@@ -57,7 +96,7 @@ function safeParseWidgetMetadataFactory(api: RsbuildPluginAPI) {
       `,
       );
 
-      func(sandbox);
+      func(sandbox, createParseTimeWidget());
 
       if (!sandbox.WidgetMetadata) {
         return null;
