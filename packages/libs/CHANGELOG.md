@@ -1,5 +1,11 @@
 # @rexnow/libs
 
+## 3.1.3
+
+### Patch Changes
+
+- 07946d8: Inject the host `Widget` global when evaluating widget output for type generation.
+
 ## 3.1.2
 
 ### Patch Changes
