@@ -197,3 +197,16 @@ export { WidgetMetadata };
   expect(dts).toContain('DoubanBridge');
   expect(dts).toContain('loadGenreCatalog');
 });
+
+test('generates types when output uses the global Widget host API', async () => {
+  const { dts, errors } = await generateTypesFromOutput(`const { http } = Widget;
+const loadGenreCatalog = async () => http.get('https://example.com');
+WidgetMetadata = ${widgetMetadataObject};
+`);
+
+  expect(errors.join('\n')).not.toMatch(/Widget is not defined/);
+  expect(errors).toEqual([]);
+  expect(dts).toContain('DoubanBridge');
+  expect(dts).toContain('loadGenreCatalog');
+  assertDtsTypechecks(dts);
+});
