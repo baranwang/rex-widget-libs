@@ -200,6 +200,7 @@ export { WidgetMetadata };
 
 test('generates types when output uses the global Widget host API', async () => {
   const { dts, errors } = await generateTypesFromOutput(`const { http } = Widget;
+http.get('https://example.com');
 const loadGenreCatalog = async () => http.get('https://example.com');
 WidgetMetadata = ${widgetMetadataObject};
 `);
