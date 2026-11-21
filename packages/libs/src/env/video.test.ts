@@ -50,42 +50,80 @@ test('GenreItem, PersonItem, and TrailerItem match the official detail models', 
 
   const trailer = getInterface('TrailerItem');
   expect(getPropertyTypeText(trailer, 'coverUrl')).toBe('string');
+  expect(getPropertyTypeText(trailer, 'videoUrl')).toBe('string');
   expect(getPropertyTypeText(trailer, 'url')).toBe('string');
   expect(trailer.getProperty('coverUrl')?.hasQuestionToken()).toBe(true);
-  expect(trailer.getProperty('url')?.hasQuestionToken()).toBe(false);
+  expect(trailer.getProperty('videoUrl')?.hasQuestionToken()).toBe(true);
+  expect(trailer.getProperty('url')?.hasQuestionToken()).toBe(true);
 });
 
-test('VideoItemChild includes official cover fields and nested models', () => {
+test('VideoItemChild includes official media, person, music, and playback fields', () => {
   const child = getInterface('VideoItemChild');
 
-  expect(getPropertyTypeText(child, 'type')).toBe("'url' | 'detail' | 'douban' | 'imdb' | 'tmdb' | 'forward'");
+  expect(getPropertyTypeText(child, 'id')).toBe('string | number');
+  expect(getPropertyTypeText(child, 'type')).toBe(
+    "'url' | 'detail' | 'douban' | 'imdb' | 'tmdb' | 'forward' | 'person'",
+  );
+  expect(getPropertyTypeText(child, 'subtitle')).toBe('string');
   expect(getPropertyTypeText(child, 'coverUrl')).toBe('string');
+  expect(getPropertyTypeText(child, 'coverRatio')).toBe('number');
   expect(getPropertyTypeText(child, 'detailPoster')).toBe('string');
+  expect(getPropertyTypeText(child, 'mediaType')).toBe('MediaType');
+  expect(getPropertyTypeText(child, 'rating')).toBe('number | string');
   expect(getPropertyTypeText(child, 'genreItems')).toBe('GenreItem[]');
   expect(getPropertyTypeText(child, 'peoples')).toBe('PersonItem[]');
+  expect(getPropertyTypeText(child, 'avatar')).toBe('string');
+  expect(getPropertyTypeText(child, 'role')).toBe('string');
+  expect(getPropertyTypeText(child, 'language')).toBe('string');
+  expect(getPropertyTypeText(child, 'albumMotionArtwork')).toBe('string');
   expect(getPropertyTypeText(child, 'trailers')).toBe('TrailerItem[]');
   expect(getPropertyTypeText(child, 'backdropPaths')).toBe('string[]');
+  expect(getPropertyTypeText(child, 'season')).toBe('number | string');
+  expect(getPropertyTypeText(child, 'customHeaders')).toBe('Record<string, string>');
+  expect(getPropertyTypeText(child, 'headers')).toBe('Record<string, string>');
+  expect(getPropertyTypeText(child, 'externalSubtitles')).toBe('ExternalSubtitleItem[]');
   expect(getPropertyTypeText(child, 'link')).toBe('string');
 
-  expect(child.getProperty('coverUrl')?.hasQuestionToken()).toBe(true);
-  expect(child.getProperty('detailPoster')?.hasQuestionToken()).toBe(true);
-  expect(child.getProperty('genreItems')?.hasQuestionToken()).toBe(true);
-  expect(child.getProperty('peoples')?.hasQuestionToken()).toBe(true);
-  expect(child.getProperty('trailers')?.hasQuestionToken()).toBe(true);
-  expect(child.getProperty('backdropPaths')?.hasQuestionToken()).toBe(true);
-  expect(child.getProperty('link')?.hasQuestionToken()).toBe(true);
+  const mediaTypeText = loadEnvSource('video.ts').getTypeAliasOrThrow('MediaType').getTypeNodeOrThrow().getText();
+  for (const mediaType of ['tv', 'movie', 'person', 'album', 'song', 'playlist', 'albumList', 'genre', 'radio']) {
+    expect(mediaTypeText).toContain(`'${mediaType}'`);
+  }
+
+  for (const optionalField of [
+    'subtitle',
+    'coverUrl',
+    'coverRatio',
+    'detailPoster',
+    'genreItems',
+    'peoples',
+    'avatar',
+    'role',
+    'language',
+    'albumMotionArtwork',
+    'trailers',
+    'backdropPaths',
+    'season',
+    'customHeaders',
+    'headers',
+    'externalSubtitles',
+    'link',
+  ]) {
+    expect(child.getProperty(optionalField)?.hasQuestionToken()).toBe(true);
+  }
 });
 
-test('VideoItem adds episodeItems and relatedItems', () => {
+test('VideoItem adds episodeItems, tracks, and relatedItems', () => {
   const item = getInterface('VideoItem');
 
   expect(getPropertyTypeText(item, 'episodeItems')).toBe('VideoItem[]');
+  expect(getPropertyTypeText(item, 'tracks')).toBe('VideoItem[]');
   expect(getPropertyTypeText(item, 'relatedItems')).toBe('VideoItem[]');
   expect(item.getProperty('episodeItems')?.hasQuestionToken()).toBe(true);
+  expect(item.getProperty('tracks')?.hasQuestionToken()).toBe(true);
   expect(item.getProperty('relatedItems')?.hasQuestionToken()).toBe(true);
 });
 
-test('loadDetail may return a VideoItem, an array, or null without requiring videoUrl', () => {
+test('loadDetail supports sync or async VideoItem or VideoItem[] without null', () => {
   const loadDetail = loadEnvSource('video.ts').getVariableDeclarationOrThrow('loadDetail');
   const typeNode = loadDetail.getTypeNode();
   expect(typeNode).toBeDefined();
@@ -94,14 +132,21 @@ test('loadDetail may return a VideoItem, an array, or null without requiring vid
     throw new Error('missing loadDetail type node');
   }
 
-  expect(typeNode.getText()).toBe('(link: string) => Promise<VideoItem | VideoItem[] | null>');
+  expect(typeNode.getText()).toBe('(link: string) => VideoItem | VideoItem[] | Promise<VideoItem | VideoItem[]>');
 });
 
-test('VideoListParams carries implicit genreId and peopleId', () => {
+test('VideoListParams carries implicit genreId, peopleId, radioId, and section', () => {
   const params = getInterface('VideoListParams');
 
   expect(getPropertyTypeText(params, 'genreId')).toBe('string');
   expect(getPropertyTypeText(params, 'peopleId')).toBe('string');
+  expect(getPropertyTypeText(params, 'radioId')).toBe('string');
+  expect(getPropertyTypeText(params, 'section')).toContain("'albums'");
+  expect(getPropertyTypeText(params, 'section')).toContain("'songs'");
+  expect(getPropertyTypeText(params, 'section')).toContain("'artists'");
+  expect(getPropertyTypeText(params, 'section')).toContain("'profile'");
   expect(params.getProperty('genreId')?.hasQuestionToken()).toBe(true);
   expect(params.getProperty('peopleId')?.hasQuestionToken()).toBe(true);
+  expect(params.getProperty('radioId')?.hasQuestionToken()).toBe(true);
+  expect(params.getProperty('section')?.hasQuestionToken()).toBe(true);
 });

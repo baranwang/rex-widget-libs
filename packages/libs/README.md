@@ -37,20 +37,31 @@ pnpm add @rexnow/libs
 ```ts
 // 现在可以使用 Widget 相关的类型和全局变量
 WidgetMetadata = {
-  name: "My Widget",
-  version: "1.0.0",
-  // ... 其他配置
+  id: 'com.example.my-widget',
+  title: 'My Widget',
+  version: '1.0.0',
+  requiredVersion: '0.0.6',
+  modules: [
+    {
+      id: 'popular',
+      title: '热门电影',
+      functionName: 'loadPopular',
+      params: [{ name: 'page', title: '页码', type: 'page' }],
+    },
+  ],
 };
 
-async function loadDetail(url: string) {
-  const resp = await Widget.http.get('https://api.example.com/data')
+loadDetail = async (link) => {
+  const resp = await Widget.http.get<{ title: string }>('https://api.example.com/data');
 
   const result: VideoItem = {
-    // ...
-  }
-  // ...
-  return result
-}
+    id: link,
+    type: 'url',
+    link,
+    title: resp.data.title,
+  };
+  return result;
+};
 ```
 
 #### JavaScript 项目
@@ -62,50 +73,55 @@ async function loadDetail(url: string) {
  * @type {import('@rexnow/libs/env')}
  */
 
-
 WidgetMetadata = {
-  name: "My Widget",
-  version: "1.0.0",
-  // ... 其他配置
+  id: 'com.example.my-widget',
+  title: 'My Widget',
+  version: '1.0.0',
+  requiredVersion: '0.0.6',
+  modules: [],
 };
 
-async function loadDetail(url) {
-  const resp = await Widget.http.get('https://api.example.com/data')
+async function loadDetail(link) {
+  const resp = await Widget.http.get('https://api.example.com/data');
   /**
-   * @type {import('@rexnow/libs/env').VideoItem}
+   * @type {VideoItem}
    */
   const result = {
-    // ...
-  }
-  // ...
-  return result
+    id: link,
+    type: 'url',
+    link,
+    title: resp.data.title,
+  };
+  return result;
 }
 ```
 
 ### 单元测试
 
-`@rexnow/libs` 提供了 `WidgetAdaptor` 来模拟 Widget 运行环境，方便进行单元测试。
+`@rexnow/libs` 提供了 `WidgetAdaptor` 来模拟 Rex 的 `Widget` 运行时 API（包含 `Widget.http`、`Widget.tmdb`、`Widget.html.load`、`Widget.storage`、`Widget.sharedCache`、`Widget.i18n`），方便进行单元测试。
 
 以 [Rstest](http://rstest.rs/) 为例：
 
 ```ts
-import { expect, test, beforeAll } from "@rstest/core";
+import { beforeAll, expect, rs, test } from '@rstest/core';
 
 beforeAll(async () => {
-  const { WidgetAdaptor } = await import("@rexnow/libs/widget-adaptor");
-  rstest.stubGlobal("Widget", WidgetAdaptor);
+  const { WidgetAdaptor } = await import('@rexnow/libs/widget-adaptor');
+  rs.stubGlobal('Widget', WidgetAdaptor);
 });
 
-test("测试 HTTP 请求", async () => {
-  const response = await Widget.http.get("https://api.example.com/data");
+test('测试 HTTP 请求', async () => {
+  const response = await Widget.http.get('https://api.example.com/data');
   expect(response).toBeDefined();
-  expect(response.status).toBe(200);
+  expect(response.statusCode).toBe(200);
 });
 ```
 
+> 提示：与 Rex 运行时一致，`Widget.http` 在状态码非 200–299 时会抛出 `HTTP <code>: <reason>` 错误；`Widget.html.load`、`Widget.storage`、`Widget.sharedCache`、`Widget.i18n` 均为同步调用。测试 `Widget.i18n` 时可通过环境变量 `REX_LOCALE` 指定语言（如 `en`、`zh-TW`）。
+
 #### TMDB
 
-如果需要使用到 `Widget.tmdb` 下的方法，需要环境变量中配置 `TMDB_API_KEY`
+如果需要使用到 `Widget.tmdb` 下的方法，需要在环境变量中配置 `TMDB_API_KEY`（支持 TMDB v3 API Key 或 v4 Read Access Token）：
 
 ```ini
 # .env
@@ -115,16 +131,21 @@ TMDB_API_KEY=xxxx
 ```ts
 // rstest.config.ts
 
-import { defineConfig } from "@rstest/core";
+import { defineConfig } from '@rstest/core';
 
 export default defineConfig({
-  testEnvironment: "node",
+  testEnvironment: 'node',
   pool: {
-    type: "forks",
-    execArgv: ["--env-file=.env"], // 通过指定 env-file 加载环境变量
+    type: 'forks',
+    execArgv: ['--env-file=.env'], // 通过指定 env-file 加载环境变量
   },
 });
 ```
+
+## 📚 相关文档
+
+- [Rex 模块官方文档](https://modules.rexnow.app/guide)
+- [Rex 模块在线测试](https://modules.rexnow.app/)
 
 ## 🤝 贡献
 

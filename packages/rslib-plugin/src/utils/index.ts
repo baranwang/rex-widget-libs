@@ -7,15 +7,33 @@ import { StructureKind, VariableDeclarationKind } from 'ts-morph';
  */
 export const toPascalCase = (str: string): string => upperFirst(camelCase(str));
 
+const VALID_IDENTIFIER_RE = /^[A-Za-z_$][\w$]*$/;
+
+function escapeSingleQuotes(value: string): string {
+  return value.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+}
+
+/**
+ * 获取模块稳定标识（缺省 id 时回退到 functionName）
+ */
+export function getModuleId(module: BaseWidgetModule, fallback = 'module'): string {
+  return module.id || module.functionName || fallback;
+}
+
 /**
  * 获取参数类型字符串
  */
 function getParamTypeString(param: WidgetModuleParam): string {
   switch (param.type) {
     case 'enumeration':
-      return param.enumOptions?.map((option) => `'${option.value}'`).join(' | ') || 'string';
+      if (param.dynamicOptions) {
+        return 'string';
+      }
+      return param.enumOptions?.length
+        ? param.enumOptions.map((option) => `'${escapeSingleQuotes(option.value)}'`).join(' | ')
+        : 'string';
     case 'constant':
-      return param.value ? `'${param.value}'` : 'undefined';
+      return param.value !== undefined ? `'${escapeSingleQuotes(param.value)}'` : 'undefined';
     default:
       return 'string';
   }
@@ -36,16 +54,17 @@ export function generateParamType(param: WidgetModuleParam): OptionalKind<Proper
     });
   }
 
-  if (param.value) {
+  if (param.value !== undefined) {
     tags.push({
       kind: StructureKind.JSDocTag,
       tagName: 'default',
-      text: `'${param.value}'`,
+      text: `'${escapeSingleQuotes(param.value)}'`,
     });
   }
 
   return {
-    name: param.name.includes('.') ? `'${param.name}'` : param.name,
+    name: VALID_IDENTIFIER_RE.test(param.name) ? param.name : `'${escapeSingleQuotes(param.name)}'`,
+    hasQuestionToken: param.belongTo !== undefined,
     type,
     docs: [
       {
@@ -57,12 +76,13 @@ export function generateParamType(param: WidgetModuleParam): OptionalKind<Proper
   };
 }
 
-export function generateTypeName(module: WidgetModule, distinct = false) {
+export function generateTypeName(module: BaseWidgetModule, distinct = false) {
+  const moduleId = getModuleId(module);
   const paramsTypeName = distinct
-    ? `${toPascalCase(module.id)}${toPascalCase(module.functionName)}Params`
+    ? `${toPascalCase(moduleId)}${toPascalCase(module.functionName)}Params`
     : toPascalCase(`${module.functionName}Params`);
   const returnTypeName = distinct
-    ? `${toPascalCase(module.id)}${toPascalCase(module.functionName)}ReturnType`
+    ? `${toPascalCase(moduleId)}${toPascalCase(module.functionName)}ReturnType`
     : toPascalCase(`${module.functionName}ReturnType`);
   return {
     paramsTypeName,
@@ -70,15 +90,16 @@ export function generateTypeName(module: WidgetModule, distinct = false) {
   };
 }
 
-export function generateModuleFunctionType(sourceFile: SourceFile, module: WidgetModule) {
+export function generateModuleFunctionType(sourceFile: SourceFile, module: BaseWidgetModule) {
   const { paramsTypeName, returnTypeName } = generateTypeName(module);
   const tags: JSDocTagStructure[] = [];
 
-  if (module.description) {
+  const docDescription = module.description || module.subtitle;
+  if (docDescription) {
     tags.push({
       kind: StructureKind.JSDocTag,
       tagName: 'description',
-      text: module.description,
+      text: docDescription,
     });
   }
 
@@ -88,7 +109,7 @@ export function generateModuleFunctionType(sourceFile: SourceFile, module: Widge
     declarations: [
       {
         name: module.functionName,
-        type: `(params: ${paramsTypeName}) => ${returnTypeName} | null | Promise<${returnTypeName} | null>`,
+        type: `(params: ${paramsTypeName}) => ${returnTypeName} | Promise<${returnTypeName}>`,
       },
     ],
     docs: [

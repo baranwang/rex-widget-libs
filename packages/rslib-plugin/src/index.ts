@@ -1,15 +1,15 @@
-import fs from "node:fs";
-import path from "node:path";
-import { widgetMetadataSchema } from "@rexnow/libs/env.zod";
-import type { RsbuildPlugin, RsbuildPluginAPI, Rspack } from "@rsbuild/core";
-import { camelCase, upperFirst } from "es-toolkit";
-import { Node, Project, type SourceFile, SyntaxKind } from "ts-morph";
-import { encryptWidgetSource } from "./encrypt";
-import { generateDanmuModuleInterfaces } from "./generators/danmu";
-import { generateStreamModuleInterface } from "./generators/stream";
-import { generateSubtitleModuleInterface } from "./generators/subtitle";
-import { generateVideoModuleInterface } from "./generators/video";
-import { generateModuleFunctionType, generateParamType, generateTypeName } from "./utils";
+import fs from 'node:fs';
+import path from 'node:path';
+import { widgetMetadataSchema } from '@rexnow/libs/env.zod';
+import type { RsbuildPlugin, RsbuildPluginAPI, Rspack } from '@rsbuild/core';
+import { camelCase, upperFirst } from 'es-toolkit';
+import { Node, Project, type SourceFile, StructureKind, SyntaxKind, VariableDeclarationKind } from 'ts-morph';
+import { encryptWidgetSource } from './encrypt';
+import { generateDanmuModuleInterfaces } from './generators/danmu';
+import { generateStreamModuleInterface } from './generators/stream';
+import { generateSubtitleModuleInterface } from './generators/subtitle';
+import { generateVideoModuleInterface } from './generators/video';
+import { generateModuleFunctionType, generateParamType, generateTypeName, getModuleId } from './utils';
 
 // 类型定义
 interface RexWidgetPluginOptions {
@@ -51,28 +51,32 @@ const parseTimeWidgetRequest = async () => ({
  */
 function createParseTimeWidget() {
   return {
+    i18n: (value: string) => value,
     http: {
       get: parseTimeWidgetRequest,
       post: parseTimeWidgetRequest,
+      put: parseTimeWidgetRequest,
+      delete: parseTimeWidgetRequest,
       request: parseTimeWidgetRequest,
     },
     tmdb: {
       get: async () => undefined,
     },
     html: {
-      load: async () => undefined,
+      load: () => undefined,
     },
     storage: {
-      get: async () => null,
-      set: async () => undefined,
-      remove: async () => undefined,
-      keys: async () => [],
-      clear: async () => undefined,
+      get: () => null,
+      set: () => undefined,
+      remove: () => undefined,
+      keys: () => [],
+      clear: () => undefined,
     },
     sharedCache: {
       get: () => null,
       set: () => undefined,
       remove: () => undefined,
+      keys: () => [],
     },
   };
 }
@@ -87,8 +91,8 @@ function safeParseWidgetMetadataFactory(api: RsbuildPluginAPI) {
       // 创建安全的执行环境
       const sandbox = { WidgetMetadata: null as WidgetMetadata | null };
       const func = new Function(
-        "sandbox",
-        "Widget",
+        'sandbox',
+        'Widget',
         `
         let WidgetMetadata;
         ${toExecutableWidgetMetadataSource(content)};
@@ -103,15 +107,20 @@ function safeParseWidgetMetadataFactory(api: RsbuildPluginAPI) {
       }
       const { data, success, error } = widgetMetadataSchema.safeParse(sandbox.WidgetMetadata);
       if (!success) {
-        api.logger.error("解析 WidgetMetadata 失败，跳过类型生成", error);
+        api.logger.error('解析 WidgetMetadata 失败，跳过类型生成', error);
         return null;
       }
       return data;
     } catch (error) {
-      api.logger.error("解析 WidgetMetadata 失败，跳过类型生成", error);
+      api.logger.error('解析 WidgetMetadata 失败，跳过类型生成', error);
       return null;
     }
   };
+}
+
+interface EntryDescriptor {
+  module: WidgetModule | WidgetSearchModule;
+  isSearch: boolean;
 }
 
 // 类型生成工具
@@ -123,7 +132,7 @@ function generateFunctionTypesFactory(api: RsbuildPluginAPI, sourceFile: SourceF
 
   return async (entry: string): Promise<void> => {
     try {
-      const content = await fs.promises.readFile(entry, "utf-8");
+      const content = await fs.promises.readFile(entry, 'utf-8');
       const widgetMetadataObject = safeParseWidgetMetadata(content);
 
       if (!widgetMetadataObject) {
@@ -135,75 +144,179 @@ function generateFunctionTypesFactory(api: RsbuildPluginAPI, sourceFile: SourceF
         hasDeclareKeyword: true,
       });
       nameSpace.addInterface({
-        name: "GlobalParams",
+        name: 'GlobalParams',
         properties: widgetMetadataObject.globalParams?.map(generateParamType) || [],
       });
 
-      generateModuleInterfaces(nameSpaceName, sourceFile, widgetMetadataObject.modules);
+      const globalParamNames = new Set((widgetMetadataObject.globalParams ?? []).map((param) => param.name));
+      const entries: EntryDescriptor[] = widgetMetadataObject.modules.map((module) => ({
+        module,
+        isSearch: false,
+      }));
+      if (widgetMetadataObject.search) {
+        entries.push({
+          module: widgetMetadataObject.search,
+          isSearch: true,
+        });
+      }
+
+      generateModuleInterfaces(nameSpaceName, sourceFile, entries, globalParamNames, widgetMetadataObject.globalParams);
     } catch (error) {
       api.logger.error(`生成函数类型失败: ${entry}`, error);
     }
   };
 }
 
-function generateModuleInterfaces(nameSpaceName: string, sourceFile: SourceFile, modules: WidgetModule[]): void {
-  const modulesByFunctionName = new Map<string, WidgetModule[]>();
-  for (const module of modules) {
-    const group = modulesByFunctionName.get(module.functionName);
-    if (group) {
-      group.push(module);
+function generateDynamicOptionsFunctions(
+  nameSpaceName: string,
+  sourceFile: SourceFile,
+  entries: EntryDescriptor[],
+  entryParamsTypeByEntry: Map<EntryDescriptor, string>,
+  declaredFunctionNames: ReadonlySet<string>,
+  globalParams?: WidgetModuleParam[],
+): void {
+  const dynamicFnParamsMap = new Map<string, Set<string>>();
+
+  const register = (fnName: string, paramsTypeName: string) => {
+    if (declaredFunctionNames.has(fnName)) {
+      return;
+    }
+    const existing = dynamicFnParamsMap.get(fnName);
+    if (existing) {
+      existing.add(paramsTypeName);
     } else {
-      modulesByFunctionName.set(module.functionName, [module]);
+      dynamicFnParamsMap.set(fnName, new Set([paramsTypeName]));
+    }
+  };
+
+  for (const param of globalParams ?? []) {
+    if (param.dynamicOptions?.functionName) {
+      register(param.dynamicOptions.functionName, `${nameSpaceName}.GlobalParams`);
     }
   }
 
-  for (const module of modules) {
-    const { id, type: moduleType } = module;
-    const shared = (modulesByFunctionName.get(module.functionName)?.length ?? 0) > 1;
+  for (const entry of entries) {
+    const paramsTypeName = entryParamsTypeByEntry.get(entry);
+    if (!paramsTypeName) {
+      continue;
+    }
+    for (const param of entry.module.params ?? []) {
+      if (param.dynamicOptions?.functionName) {
+        register(param.dynamicOptions.functionName, paramsTypeName);
+      }
+    }
+  }
+
+  for (const [fnName, paramsTypes] of dynamicFnParamsMap) {
+    const paramsType = Array.from(paramsTypes).join(' | ');
+    sourceFile.addStatements(`\n//#region dynamicOptions:${fnName}`);
+    sourceFile.addVariableStatement({
+      declarationKind: VariableDeclarationKind.Let,
+      hasDeclareKeyword: true,
+      declarations: [
+        {
+          name: fnName,
+          type: `(params: ${paramsType}) => Array<WidgetModuleParamOption> | Promise<Array<WidgetModuleParamOption>>`,
+        },
+      ],
+      docs: [
+        {
+          kind: StructureKind.JSDoc,
+          description: `Dynamic options loader: ${fnName}`,
+        },
+      ],
+    });
+    sourceFile.addStatements(`//#endregion dynamicOptions:${fnName}`);
+  }
+}
+
+function generateModuleInterfaces(
+  nameSpaceName: string,
+  sourceFile: SourceFile,
+  entries: EntryDescriptor[],
+  globalParamNames: ReadonlySet<string>,
+  globalParams?: WidgetModuleParam[],
+): void {
+  const entriesByFunctionName = new Map<string, EntryDescriptor[]>();
+  for (const entry of entries) {
+    const group = entriesByFunctionName.get(entry.module.functionName);
+    if (group) {
+      group.push(entry);
+    } else {
+      entriesByFunctionName.set(entry.module.functionName, [entry]);
+    }
+  }
+
+  const entryParamsTypeByEntry = new Map<EntryDescriptor, string>();
+
+  for (const entry of entries) {
+    const { module, isSearch } = entry;
+    const moduleId = getModuleId(module, isSearch ? 'search' : 'module');
+    const shared = (entriesByFunctionName.get(module.functionName)?.length ?? 0) > 1;
     const typeNames = generateTypeName(module, shared);
+    entryParamsTypeByEntry.set(entry, typeNames.paramsTypeName);
 
     // 添加区域注释
-    sourceFile.addStatements(`\n//#region ${id}`);
+    sourceFile.addStatements(`\n//#region ${moduleId}`);
 
-    switch (moduleType) {
-      case "danmu":
-        generateDanmuModuleInterfaces(nameSpaceName, sourceFile, module, typeNames);
-        break;
-      case "stream":
-        generateStreamModuleInterface(nameSpaceName, sourceFile, module, typeNames);
-        break;
-      case "subtitle":
-        generateSubtitleModuleInterface(nameSpaceName, sourceFile, module, typeNames);
-        break;
-      default:
-        // 没有 type 或 type 不是 'danmu' 的都是 video 类型
-        generateVideoModuleInterface(nameSpaceName, sourceFile, module, typeNames);
-        break;
+    if (isSearch) {
+      generateVideoModuleInterface(nameSpaceName, sourceFile, module, typeNames, {
+        globalParamNames,
+        isSearch: true,
+      });
+    } else {
+      switch (module.type) {
+        case 'danmu':
+          generateDanmuModuleInterfaces(nameSpaceName, sourceFile, module as WidgetModule, typeNames);
+          break;
+        case 'stream':
+          generateStreamModuleInterface(nameSpaceName, sourceFile, module as WidgetModule, typeNames);
+          break;
+        case 'subtitle':
+          generateSubtitleModuleInterface(nameSpaceName, sourceFile, module as WidgetModule, typeNames);
+          break;
+        default:
+          // video / person 或缺省 type 的媒体列表
+          generateVideoModuleInterface(nameSpaceName, sourceFile, module, typeNames, {
+            globalParamNames,
+          });
+          break;
+      }
     }
 
     if (!shared) {
       generateModuleFunctionType(sourceFile, module);
     }
 
-    sourceFile.addStatements(`//#endregion ${id}`);
+    sourceFile.addStatements(`//#endregion ${moduleId}`);
   }
 
-  for (const group of modulesByFunctionName.values()) {
+  for (const group of entriesByFunctionName.values()) {
     if (group.length < 2) {
       continue;
     }
 
-    const { paramsTypeName, returnTypeName } = generateTypeName(group[0]);
+    const { paramsTypeName, returnTypeName } = generateTypeName(group[0].module);
     sourceFile.addTypeAlias({
       name: paramsTypeName,
-      type: group.map((module) => generateTypeName(module, true).paramsTypeName).join(" | "),
+      type: group.map((entry) => generateTypeName(entry.module, true).paramsTypeName).join(' | '),
     });
     sourceFile.addTypeAlias({
       name: returnTypeName,
-      type: group.map((module) => generateTypeName(module, true).returnTypeName).join(" | "),
+      type: group.map((entry) => generateTypeName(entry.module, true).returnTypeName).join(' | '),
     });
-    generateModuleFunctionType(sourceFile, group[0]);
+    generateModuleFunctionType(sourceFile, group[0].module);
   }
+
+  const declaredFunctionNames = new Set(entriesByFunctionName.keys());
+  generateDynamicOptionsFunctions(
+    nameSpaceName,
+    sourceFile,
+    entries,
+    entryParamsTypeByEntry,
+    declaredFunctionNames,
+    globalParams,
+  );
 }
 
 // 文件处理工具
@@ -254,21 +367,21 @@ async function addSpaceToWidgetMetadata(distPath: string): Promise<void> {
 
     // 左侧必须是 Identifier 且为 WidgetMetadata
     const left = be.getLeft();
-    if (!Node.isIdentifier(left) || left.getText() !== "WidgetMetadata") continue;
+    if (!Node.isIdentifier(left) || left.getText() !== 'WidgetMetadata') continue;
 
     const eq = be.getOperatorToken();
     const start = eq.getStart();
     const end = eq.getEnd();
 
-    const beforeCh = start > 0 ? fullText[start - 1] : "";
-    const afterCh = end < fullText.length ? fullText[end] : "";
+    const beforeCh = start > 0 ? fullText[start - 1] : '';
+    const afterCh = end < fullText.length ? fullText[end] : '';
 
     // 无空格/制表符则补一个空格
-    if (beforeCh !== " " && beforeCh !== "\t") {
-      insertions.push({ pos: start, text: " " });
+    if (beforeCh !== ' ' && beforeCh !== '\t') {
+      insertions.push({ pos: start, text: ' ' });
     }
-    if (afterCh !== " " && afterCh !== "\t") {
-      insertions.push({ pos: end, text: " " });
+    if (afterCh !== ' ' && afterCh !== '\t') {
+      insertions.push({ pos: end, text: ' ' });
     }
   }
 
@@ -284,10 +397,10 @@ async function addSpaceToWidgetMetadata(distPath: string): Promise<void> {
 
 // 构建处理工具
 async function encryptOutputFiles(api: RsbuildPluginAPI, outputFiles: string[]): Promise<void> {
-  const jsFiles = outputFiles.filter((file) => file.endsWith(".js"));
+  const jsFiles = outputFiles.filter((file) => file.endsWith('.js'));
 
   for (const file of jsFiles) {
-    const source = await fs.promises.readFile(file, "utf-8");
+    const source = await fs.promises.readFile(file, 'utf-8');
     api.logger.info(`正在加密 ${path.basename(file)}…`);
     const encrypted = await encryptWidgetSource(source);
     await fs.promises.writeFile(file, encrypted);
@@ -307,7 +420,7 @@ async function processAfterBuild(
   const outputFiles = getOutputFiles(api, stats);
 
   if (!outputFiles.length) {
-    api.logger.warn("未找到输出文件，跳过类型生成");
+    api.logger.warn('未找到输出文件，跳过类型生成');
     return;
   }
 
@@ -347,7 +460,7 @@ async function setupTypeDefinitionFile(dtsPath: string): Promise<SourceFile> {
     typeDefFile = dtsProject.addSourceFileAtPath(dtsPath);
     typeDefFile.removeStatements([0, typeDefFile.getStatementsWithComments().length]);
   } else {
-    typeDefFile = dtsProject.createSourceFile(dtsPath, "");
+    typeDefFile = dtsProject.createSourceFile(dtsPath, '');
   }
 
   typeDefFile.insertText(0, `/// <reference types='@rexnow/libs/env' />\n\n`);
@@ -357,17 +470,17 @@ async function setupTypeDefinitionFile(dtsPath: string): Promise<SourceFile> {
 
 // 主插件导出
 export const pluginRexWidget = ({
-  typesFilePath = "src/rex-widget-env.d.ts",
+  typesFilePath = 'src/rex-widget-env.d.ts',
   devPort = 8000,
   encrypt = false,
 }: RexWidgetPluginOptions = {}): RsbuildPlugin => ({
-  name: "plugin-rex-widget",
+  name: 'plugin-rex-widget',
 
   setup(api) {
     const dtsPath = path.resolve(api.context.rootPath, typesFilePath);
 
     // 添加类型文件依赖
-    api.transform({ test: "/.ts$/" }, ({ code, addDependency }) => {
+    api.transform({ test: '/.ts$/' }, ({ code, addDependency }) => {
       addDependency(dtsPath);
       return code;
     });
@@ -376,7 +489,7 @@ export const pluginRexWidget = ({
       try {
         await processAfterBuild(api, stats, dtsPath, { encrypt, isWatch });
       } catch (error) {
-        api.logger.error("Rex Widget 插件处理失败", error);
+        api.logger.error('Rex Widget 插件处理失败', error);
         if (encrypt && !isWatch) {
           throw error;
         }
@@ -384,7 +497,7 @@ export const pluginRexWidget = ({
 
       try {
         if (isWatch && isFirstCompile) {
-          const { createDevServer } = await import("./dev-server");
+          const { createDevServer } = await import('./dev-server');
 
           await createDevServer({
             api,
@@ -392,7 +505,7 @@ export const pluginRexWidget = ({
           });
         }
       } catch (error) {
-        api.logger.error("Rex Widget 插件开发服务器启动失败", error);
+        api.logger.error('Rex Widget 插件开发服务器启动失败', error);
       }
     });
   },

@@ -55,3 +55,5 @@ pnpm add -D @rexnow/libs @rexnow/rslib-plugin
 - [**@rexnow/libs**](./packages/libs/README.md) - 核心工具库使用指南
 - [**@rexnow/rslib-plugin**](./packages/rslib-plugin/README.md) - 构建插件配置指南
 - [**create-rex-widget**](./packages/create-rex-widget/README.md) - 脚手架工具使用指南
+- [**Rex 模块官方文档**](https://modules.rexnow.app/guide) - 元数据、参数、返回字段、音乐模块与运行时 API 规范
+- [**Rex 模块在线测试**](https://modules.rexnow.app/) - 在线运行、预览、诊断与加密模块

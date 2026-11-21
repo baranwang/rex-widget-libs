@@ -87,7 +87,7 @@ npm run build
 
 ## 📚 相关文档
 
-- [Rex Widget 开发文档](https://github.com/your-org/rex-widget-docs)
+- [Rex 模块官方文档](https://modules.rexnow.app/guide)
 - [@rexnow/libs](../libs/README.md) - 核心工具库
 - [@rexnow/rslib-plugin](../rslib-plugin/README.md) - 构建插件
 

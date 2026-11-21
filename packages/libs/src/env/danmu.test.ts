@@ -35,33 +35,50 @@ function getPropertyTypeText(iface: InterfaceDeclaration, name: string): string 
   return typeNode.getText();
 }
 
-test('BaseParams includes premiereDate', () => {
+test('BaseParams includes other type, optional title, and premiereDate', () => {
   const params = getInterface('common.ts', 'BaseParams');
 
+  expect(getPropertyTypeText(params, 'type')).toBe("'tv' | 'movie' | 'other'");
+  expect(getPropertyTypeText(params, 'title')).toBe('string');
+  expect(params.getProperty('title')?.hasQuestionToken()).toBe(true);
   expect(getPropertyTypeText(params, 'premiereDate')).toBe('string');
   expect(params.getProperty('premiereDate')?.hasQuestionToken()).toBe(true);
 });
 
-test('AnimeItem includes bangumiId from official search results', () => {
+test('AnimeItem and GetDetailResponseItem match official Rex danmu schemas', () => {
   const anime = getInterface('danmu.ts', 'AnimeItem');
 
   expect(getPropertyTypeText(anime, 'animeId')).toBe('string | number');
   expect(getPropertyTypeText(anime, 'animeTitle')).toBe('string');
   expect(getPropertyTypeText(anime, 'bangumiId')).toBe('string | number');
   expect(anime.getProperty('bangumiId')?.hasQuestionToken()).toBe(true);
+
+  const episode = getInterface('danmu.ts', 'GetDetailResponseItem');
+  expect(getPropertyTypeText(episode, 'episodeId')).toBe('string | number');
+  expect(getPropertyTypeText(episode, 'episodeTitle')).toBe('string');
+  expect(getPropertyTypeText(episode, 'episodeNumber')).toBe('string | number');
+  expect(episode.getProperty('episodeNumber')?.hasQuestionToken()).toBe(true);
 });
 
-test('GetCommentsResponse comments accept object format and tuple format', () => {
-  const commentTuple = loadEnvSource('danmu.ts').getTypeAliasOrThrow('CommentTuple');
-  const tupleNode = commentTuple.getTypeNode();
-  expect(tupleNode).toBeDefined();
+test('Danmu comments support comments object, danmuku tuples, bare array, XML string, and segment time params', () => {
+  const sourceFile = loadEnvSource('danmu.ts');
+  const commentItem = getInterface('danmu.ts', 'CommentItem');
+  expect(getPropertyTypeText(commentItem, 'p')).toBe('string');
 
-  if (tupleNode === undefined) {
-    throw new Error('missing CommentTuple type node');
-  }
-
-  expect(tupleNode.getText()).toBe('[number, string, string, string, string]');
+  const commentTuple = sourceFile.getTypeAliasOrThrow('CommentTuple');
+  expect(commentTuple.getTypeNodeOrThrow().getText()).toBe(
+    '[number, string | number, string | number, string, string]',
+  );
 
   const response = getInterface('danmu.ts', 'GetCommentsResponse');
+  expect(response.getProperty('count')?.hasQuestionToken()).toBe(true);
   expect(getPropertyTypeText(response, 'comments')).toBe('Array<CommentItem | CommentTuple>');
+
+  const resultAlias = sourceFile.getTypeAliasOrThrow('DanmuCommentsResult');
+  expect(resultAlias.getTypeNodeOrThrow().getText()).toBe(
+    'GetCommentsResponse | DanmukuCommentsResponse | CommentItem[] | string',
+  );
+
+  const segmentParams = getInterface('danmu.ts', 'GetCommentsWithSegmentTimeParams');
+  expect(getPropertyTypeText(segmentParams, 'segmentTime')).toBe('string | number');
 });

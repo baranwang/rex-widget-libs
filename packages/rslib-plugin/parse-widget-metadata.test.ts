@@ -199,8 +199,13 @@ export { WidgetMetadata };
 });
 
 test('generates types when output uses the global Widget host API', async () => {
-  const { dts, errors } = await generateTypesFromOutput(`const { http } = Widget;
+  const { dts, errors } = await generateTypesFromOutput(`const { http, i18n, storage, sharedCache } = Widget;
+const label = i18n('电影类型榜');
+storage.get('last');
+sharedCache.keys('ns');
 http.get('https://example.com');
+http.put('https://example.com', {});
+http.delete('https://example.com');
 const loadGenreCatalog = async () => http.get('https://example.com');
 WidgetMetadata = ${widgetMetadataObject};
 `);
@@ -209,5 +214,139 @@ WidgetMetadata = ${widgetMetadataObject};
   expect(errors).toEqual([]);
   expect(dts).toContain('DoubanBridge');
   expect(dts).toContain('loadGenreCatalog');
+  assertDtsTypechecks(dts);
+});
+
+test('generates types for 0.0.7 music metadata, person module, and top-level search entry', async () => {
+  const { dts, errors } = await generateTypesFromOutput(`var WidgetMetadata = {
+  id: 'rex.example.music',
+  title: '音乐目录示例',
+  version: '1.3.0',
+  requiredVersion: '0.0.7',
+  contentType: 'music',
+  continuousPlay: true,
+  modules: [
+    { id: 'musicAlbums', title: '专辑', type: 'video', functionName: 'loadMusicAlbums' },
+    {
+      id: 'musicArtists',
+      title: '歌手',
+      type: 'person',
+      functionName: 'loadArtists',
+      params: [
+        { name: 'peopleId', title: '歌手 ID', type: 'input' },
+        {
+          name: 'section',
+          title: '歌手分区',
+          type: 'enumeration',
+          enumOptions: [
+            { title: '歌曲', value: 'songs' },
+            { title: '专辑', value: 'albums' },
+            { title: '资料', value: 'profile' },
+            { title: '相似歌手', value: 'artists' },
+          ],
+        },
+        { name: 'page', title: '页码', type: 'page', startPage: 0 },
+      ],
+    },
+  ],
+  search: {
+    id: 'search',
+    title: '搜索',
+    functionName: 'searchMusic',
+    params: [{ name: 'page', title: '页码', type: 'page' }],
+  },
+};
+`);
+
+  expect(errors).toEqual([]);
+  expect(dts).toContain('interface LoadMusicAlbumsParams extends RexExampleMusic.GlobalParams, VideoListParams');
+  expect(dts).toContain('interface LoadArtistsParams extends RexExampleMusic.GlobalParams, VideoListParams');
+  expect(dts).toContain("section: 'songs' | 'albums' | 'profile' | 'artists'");
+  expect(dts).toContain('interface SearchMusicParams extends RexExampleMusic.GlobalParams');
+  expect(dts).toContain('keyword: string;');
+  expect(dts).toContain(
+    'declare let searchMusic: (params: SearchMusicParams) => SearchMusicReturnType | Promise<SearchMusicReturnType>;',
+  );
+  assertDtsTypechecks(dts);
+});
+
+test('generates types for dynamicOptions, belongTo optional params, empty constant, and colliding GlobalParams', async () => {
+  const { dts, errors } = await generateTypesFromOutput(`WidgetMetadata = {
+  id: 'rex.test.dynamic-options',
+  title: '动态枚举测试',
+  version: '1.0.0',
+  requiredVersion: '0.0.6',
+  globalParams: [
+    { name: 'section', title: '全局分区', type: 'constant', value: '' },
+    { name: 'timezone', title: '时区', type: 'timezone' },
+    { name: 'folder', title: '目录', type: 'folder' },
+    { name: 'configId', title: '配置', type: 'configId' },
+  ],
+  modules: [
+    {
+      id: 'genreDiscover',
+      title: '按类型发现',
+      functionName: 'genreDiscover',
+      params: [
+        {
+          name: 'mediaType',
+          title: '媒体',
+          type: 'enumeration',
+          enumOptions: [
+            { title: '电影', value: 'movie' },
+            { title: '剧集', value: 'tv' },
+          ],
+        },
+        {
+          name: 'genre',
+          title: '类型',
+          type: 'enumeration',
+          enumOptions: [{ title: '全部', value: '' }],
+          belongTo: [{ paramName: 'mediaType', value: ['movie', 'tv'] }],
+          dynamicOptions: { functionName: 'loadGenres', dependsOn: ['mediaType'] },
+        },
+      ],
+    },
+  ],
+};
+`);
+
+  expect(errors).toEqual([]);
+  expect(dts).toContain("section: '';");
+  expect(dts).toContain('genre?: string;');
+  expect(dts).toContain(
+    'declare let loadGenres: (params: GenreDiscoverParams) => Array<WidgetModuleParamOption> | Promise<Array<WidgetModuleParamOption>>;',
+  );
+  assertDtsTypechecks(dts);
+});
+
+test('generates types for danmu including getCommentsWithSegmentTime and DanmuCommentsResult', async () => {
+  const { dts, errors } = await generateTypesFromOutput(`var WidgetMetadata = {
+  id: 'rex.example.danmu',
+  title: '弹幕示例',
+  version: '1.0.0',
+  requiredVersion: '0.0.6',
+  modules: [
+    { id: 'searchDanmu', title: '搜索番剧', type: 'danmu', functionName: 'findAnime' },
+    { id: 'getDetail', title: '加载分集', type: 'danmu', functionName: 'findEpisodes' },
+    { id: 'getComments', title: '加载弹幕', type: 'danmu', functionName: 'findComments' },
+    {
+      id: 'getCommentsWithSegmentTime',
+      title: '分段弹幕',
+      type: 'danmu',
+      functionName: 'findSegmentComments',
+      params: [{ name: 'source', title: '弹幕源', type: 'input' }],
+    },
+  ],
+};
+`);
+
+  expect(errors).toEqual([]);
+  expect(dts).toContain('type FindCommentsReturnType = DanmuCommentsResult;');
+  expect(dts).toContain(
+    'interface FindSegmentCommentsParams extends RexExampleDanmu.GlobalParams, BaseParams, GetCommentsWithSegmentTimeParams',
+  );
+  expect(dts).toContain('source: string;');
+  expect(dts).toContain('type FindSegmentCommentsReturnType = DanmuCommentsResult;');
   assertDtsTypechecks(dts);
 });

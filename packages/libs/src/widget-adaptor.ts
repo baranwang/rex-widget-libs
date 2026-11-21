@@ -5,46 +5,158 @@ import { promisify } from 'node:util';
 import { inflate } from 'node:zlib';
 import { load } from 'cheerio';
 
-interface RequestOptions {
+export type HttpQueryParams = Record<string, string | number | boolean>;
+
+export type HttpMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE' | 'HEAD';
+
+export interface RequestOptions {
   headers?: Record<string, string>;
-  params?: Record<string, string>;
+  params?: HttpQueryParams;
   zlibMode?: boolean;
   base64Data?: boolean;
   allow_redirects?: boolean;
 }
 
-interface HttpRequestOptions extends RequestOptions {
+export interface HttpRequestOptions extends RequestOptions {
   url: string;
-  method?: 'GET' | 'POST';
+  method?: HttpMethod;
   data?: unknown;
   body?: unknown;
+  /** 超时时间（秒），默认 20，范围 3–40；仅 Widget.http.request 生效 */
+  timeout?: number;
+  /** 是否自动解析 JSON 响应体，默认 true；仅 Widget.http.request 生效 */
+  decodable?: boolean;
 }
 
-const createHttpRequest = async <T>(
+export interface HttpResponse<T = unknown> {
+  data: T;
+  statusCode: number;
+  headers: Record<string, string>;
+}
+
+export interface TmdbRequestOptions {
+  headers?: Record<string, string>;
+  params?: HttpQueryParams;
+}
+
+const HTTP_REASON_PHRASES: Record<number, string> = {
+  301: 'moved permanently',
+  302: 'found',
+  303: 'see other',
+  304: 'unmodified',
+  307: 'temporarily redirected',
+  308: 'permanently redirected',
+  400: 'bad request',
+  401: 'unauthorized',
+  403: 'forbidden',
+  404: 'not found',
+  405: 'method not allowed',
+  408: 'request timed out',
+  409: 'conflict',
+  410: 'no longer exists',
+  429: 'too many requests',
+  500: 'internal server error',
+  502: 'bad gateway',
+  503: 'service unavailable',
+  504: 'gateway timed out',
+};
+
+const MAX_SAFE_BIGINT = BigInt('9007199254740991');
+
+function formatHttpError(status: number, statusText?: string): string {
+  const reason =
+    HTTP_REASON_PHRASES[status] ??
+    (statusText?.trim() ? statusText.trim().toLowerCase() : undefined) ??
+    (status < 200 ? 'informational' : status < 400 ? 'redirected' : status < 500 ? 'client error' : 'server error');
+  return `HTTP ${status}: ${reason}`;
+}
+
+function hasHeader(headers: Record<string, string>, name: string): boolean {
+  const target = name.toLowerCase();
+  return Object.keys(headers).some((key) => key.toLowerCase() === target);
+}
+
+/** 超过 JS 安全整数范围的 JSON 整数按字符串解析，与 Rex 运行时一致。 */
+function parseJSONLossless(text: string): unknown {
+  const normalized = text.replace(/"(?:\\.|[^"\\])*"|-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?/g, (token) => {
+    if (token[0] === '"' || /[.eE]/.test(token)) {
+      return token;
+    }
+    try {
+      const value = BigInt(token);
+      return value > MAX_SAFE_BIGINT || value < -MAX_SAFE_BIGINT ? JSON.stringify(token) : token;
+    } catch {
+      return token;
+    }
+  });
+  return JSON.parse(normalized);
+}
+
+const createHttpRequest = async <T = unknown>(
   url: string,
-  method: 'GET' | 'POST',
-  options?: RequestOptions & { body?: unknown },
-) => {
+  method: HttpMethod,
+  options?: RequestOptions & { body?: unknown; timeout?: number; decodable?: boolean },
+): Promise<HttpResponse<T>> => {
+  const normalizedMethod = method.toUpperCase() as HttpMethod;
+  const reqHeaders: Record<string, string> = {
+    ...options?.headers,
+  };
   const fetchOptions: RequestInit = {
-    method,
-    headers: {
-      'Content-Type': 'application/json',
-      ...options?.headers,
-    },
+    method: normalizedMethod,
+    headers: reqHeaders,
+    redirect: options?.allow_redirects === false ? 'manual' : 'follow',
   };
 
-  if (method === 'POST' && options?.body !== undefined) {
-    fetchOptions.body = typeof options.body === 'string' ? options.body : JSON.stringify(options.body);
-  }
   const uri = new URL(url);
-  if (options?.params) {
+  const isBodyMethod = normalizedMethod === 'POST' || normalizedMethod === 'PUT' || normalizedMethod === 'PATCH';
+  const hasBody = options?.body !== undefined && options?.body !== null;
+
+  if (isBodyMethod && !hasBody && options?.params && Object.keys(options.params).length > 0) {
+    const formParams = new URLSearchParams();
     Object.entries(options.params).forEach(([key, value]) => {
-      uri.searchParams.set(key, value);
+      formParams.append(key, String(value));
     });
+    fetchOptions.body = formParams.toString();
+    if (!hasHeader(reqHeaders, 'content-type')) {
+      reqHeaders['Content-Type'] = 'application/x-www-form-urlencoded; charset=utf-8';
+    }
+  } else {
+    if (options?.params) {
+      Object.entries(options.params).forEach(([key, value]) => {
+        uri.searchParams.set(key, String(value));
+      });
+    }
+    if (isBodyMethod && hasBody) {
+      fetchOptions.body = typeof options.body === 'string' ? options.body : JSON.stringify(options.body);
+      if (!hasHeader(reqHeaders, 'content-type')) {
+        reqHeaders['Content-Type'] = 'application/json';
+      }
+    }
+  }
+
+  let controller: AbortController | undefined;
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  if (typeof options?.timeout === 'number' && Number.isFinite(options.timeout)) {
+    const timeoutMs = Math.min(40_000, Math.max(3_000, options.timeout * 1000));
+    controller = new AbortController();
+    fetchOptions.signal = controller.signal;
+    timer = setTimeout(() => controller?.abort(), timeoutMs);
+  }
+
+  let response: Response;
+  try {
+    response = await fetch(uri, fetchOptions);
+  } finally {
+    if (timer) {
+      clearTimeout(timer);
+    }
+  }
+
+  if (response.status < 200 || response.status >= 300) {
+    throw new Error(formatHttpError(response.status, response.statusText));
   }
 
   let data: T;
-  const response = await fetch(uri, fetchOptions);
   if (options?.base64Data) {
     const arrayBuffer = await response.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
@@ -54,10 +166,14 @@ const createHttpRequest = async <T>(
     data = (await promisify(inflate)(await response.arrayBuffer())).toString('utf-8') as T;
   } else {
     const textData = await response.text();
-    try {
-      data = JSON.parse(textData) as T;
-    } catch {
+    if (options?.decodable === false) {
       data = textData as T;
+    } else {
+      try {
+        data = parseJSONLossless(textData) as T;
+      } catch {
+        data = textData as T;
+      }
     }
   }
 
@@ -94,8 +210,11 @@ const STORAGE_CONFIG = {
 };
 
 const SHARED_CACHE_CONFIG = {
+  getDir: (namespace: string) => {
+    return path.join(ADAPTOR_ROOT, 'shared-cache', encodeURIComponent(namespace));
+  },
   getFilePath: (namespace: string, key: string) => {
-    const dir = path.join(ADAPTOR_ROOT, 'shared-cache', encodeURIComponent(namespace));
+    const dir = SHARED_CACHE_CONFIG.getDir(namespace);
     if (!fs.existsSync(dir)) {
       fs.mkdirSync(dir, { recursive: true });
     }
@@ -103,79 +222,181 @@ const SHARED_CACHE_CONFIG = {
   },
 };
 
+function normalizeLocale(locale: string): string {
+  return locale.replace(/_/g, '-').toLowerCase();
+}
+
+function isPlainRecord(value: unknown): value is Record<string, unknown> {
+  return value !== null && typeof value === 'object' && !Array.isArray(value);
+}
+
+function resolveI18n(value: string, dictionary: unknown, locale: string): string {
+  if (typeof value !== 'string' || !isPlainRecord(dictionary)) {
+    return value;
+  }
+
+  const normalized = normalizeLocale(locale);
+  const parts = normalized.split('-');
+  const candidates = [normalized];
+  if (parts[0] === 'zh') {
+    candidates.push(/(?:hant|tw|hk|mo)/.test(normalized) ? 'zh-hant' : 'zh-hans');
+  } else if (parts[1]?.length === 4) {
+    candidates.push(parts.slice(0, 2).join('-'));
+  }
+  candidates.push(parts[0]);
+
+  for (const candidate of new Set(candidates)) {
+    for (const [key, map] of Object.entries(dictionary)) {
+      if (normalizeLocale(key) === candidate && isPlainRecord(map)) {
+        const translated = map[value];
+        if (typeof translated === 'string' && translated.trim()) {
+          return translated;
+        }
+      }
+    }
+  }
+
+  return value;
+}
+
+function readJsonFile<T>(filePath: string): T | null {
+  if (!fs.existsSync(filePath)) {
+    return null;
+  }
+  const raw = fs.readFileSync(filePath, 'utf-8');
+  try {
+    return JSON.parse(raw) as T;
+  } catch {
+    return raw as T;
+  }
+}
+
+function pickShortcutOptions(options?: RequestOptions): RequestOptions | undefined {
+  if (!options) {
+    return undefined;
+  }
+  return {
+    headers: options.headers,
+    params: options.params,
+    zlibMode: options.zlibMode,
+    base64Data: options.base64Data,
+    allow_redirects: options.allow_redirects,
+  };
+}
+
 export const WidgetAdaptor = {
+  /**
+   * 按 WidgetMetadata.i18n 词典解析多语言文案（Rex 0.0.6+）
+   */
+  i18n: (value: string): string => {
+    if (typeof value !== 'string') {
+      return value;
+    }
+    const metadata = (globalThis as { WidgetMetadata?: { i18n?: unknown } }).WidgetMetadata;
+    const locale = process.env.REX_LOCALE || Intl.DateTimeFormat().resolvedOptions().locale || 'zh-CN';
+    return resolveI18n(value, metadata?.i18n, locale);
+  },
   http: {
-    get: async <T>(url: string, options?: RequestOptions) => {
-      return createHttpRequest<T>(url, 'GET', options);
+    get: async <T = unknown>(url: string, options?: RequestOptions) => {
+      return createHttpRequest<T>(url, 'GET', pickShortcutOptions(options));
     },
-    post: async <T>(url: string, body: unknown, options?: RequestOptions) => {
-      return createHttpRequest<T>(url, 'POST', { ...options, body });
+    post: async <T = unknown>(url: string, data?: unknown, options?: RequestOptions) => {
+      return createHttpRequest<T>(url, 'POST', { ...pickShortcutOptions(options), body: data });
     },
-    request: async <T>(options: HttpRequestOptions) => {
+    put: async <T = unknown>(url: string, data?: unknown, options?: RequestOptions) => {
+      return createHttpRequest<T>(url, 'PUT', { ...pickShortcutOptions(options), body: data });
+    },
+    delete: async <T = unknown>(url: string, options?: RequestOptions) => {
+      return createHttpRequest<T>(url, 'DELETE', pickShortcutOptions(options));
+    },
+    request: async <T = unknown>(options: HttpRequestOptions) => {
       const { url, method = 'GET', data, body, ...rest } = options;
       return createHttpRequest<T>(url, method, { ...rest, body: body ?? data });
     },
   },
   tmdb: {
-    get: async <T>(url: string, options?: RequestOptions) => {
-      const urlObj = new URL(`/3/${url}`, 'https://api.themoviedb.org/');
-      options ||= {};
-      options.headers = {
-        ...options.headers,
+    get: async <T = unknown>(url: string, options?: TmdbRequestOptions) => {
+      const normalizedPath = url.replace(/^\//, '');
+      const urlObj = new URL(`/3/${normalizedPath}`, 'https://api.themoviedb.org/');
+      const headers: Record<string, string> = {
         accept: 'application/json',
-        Authorization: `Bearer ${process.env.TMDB_API_KEY}`,
+        ...options?.headers,
       };
-      const resp = await WidgetAdaptor.http.get<T>(urlObj.toString(), options);
+      const params: HttpQueryParams = {
+        ...options?.params,
+      };
+      const apiKey = process.env.TMDB_API_KEY;
+      if (apiKey) {
+        if (apiKey.includes('.')) {
+          if (!hasHeader(headers, 'authorization')) {
+            headers.Authorization = `Bearer ${apiKey}`;
+          }
+        } else if (params.api_key === undefined) {
+          params.api_key = apiKey;
+        }
+      }
+      const resp = await WidgetAdaptor.http.get<T>(urlObj.toString(), { headers, params });
       return resp.data;
     },
   },
   html: {
-    load: ((...args: Parameters<typeof import('cheerio').load>) =>
-      new Promise((resolve) => resolve(load(...args)))) as (
-      ...args: Parameters<typeof import('cheerio').load>
-    ) => Promise<ReturnType<typeof import('cheerio').load>>,
+    load: (...args: Parameters<typeof load>): ReturnType<typeof load> => load(...args),
   },
   storage: {
-    get: async (key: string) => {
-      const filePath = STORAGE_CONFIG.getFilePath(key);
-      if (!fs.existsSync(filePath)) {
-        return null;
+    get: <T = unknown>(key: string): T | null => {
+      return readJsonFile<T>(STORAGE_CONFIG.getFilePath(key));
+    },
+    set: (key: string, value: unknown): void => {
+      if (value === undefined) {
+        return;
       }
-      return fs.promises.readFile(filePath, 'utf-8');
+      fs.writeFileSync(STORAGE_CONFIG.getFilePath(key), JSON.stringify(value), 'utf-8');
     },
-    set: (key: string, value: string) => {
-      return fs.promises.writeFile(STORAGE_CONFIG.getFilePath(key), value, 'utf-8');
+    remove: (key: string): void => {
+      fs.rmSync(STORAGE_CONFIG.getFilePath(key), { force: true });
     },
-    remove: (key: string) => {
-      return fs.promises.rm(STORAGE_CONFIG.getFilePath(key));
+    keys: (): string[] => {
+      return fs.readdirSync(STORAGE_CONFIG.DIR).map((key) => decodeURIComponent(key));
     },
-    keys: async () => {
-      const keys = await fs.promises.readdir(STORAGE_CONFIG.DIR);
-      return keys.map((key) => decodeURIComponent(key));
-    },
-    clear: () => {
-      return fs.promises.rm(STORAGE_CONFIG.DIR, { recursive: true });
+    clear: (): void => {
+      fs.rmSync(STORAGE_CONFIG.DIR, { recursive: true, force: true });
     },
   },
   sharedCache: {
-    get: (namespace: string, key: string) => {
-      const filePath = SHARED_CACHE_CONFIG.getFilePath(namespace, key);
-      if (!fs.existsSync(filePath)) {
+    get: <T = unknown>(namespace: string, key: string): T | null => {
+      const ns = namespace.trim();
+      const trimmedKey = key.trim();
+      if (!ns || !trimmedKey) {
         return null;
       }
-
-      const raw = fs.readFileSync(filePath, 'utf-8');
-      try {
-        return JSON.parse(raw) as unknown;
-      } catch {
-        return raw;
+      return readJsonFile<T>(SHARED_CACHE_CONFIG.getFilePath(ns, trimmedKey));
+    },
+    set: (namespace: string, key: string, value?: unknown): void => {
+      const ns = namespace.trim();
+      const trimmedKey = key.trim();
+      if (!ns || !trimmedKey || value === undefined) {
+        return;
       }
+      fs.writeFileSync(SHARED_CACHE_CONFIG.getFilePath(ns, trimmedKey), JSON.stringify(value), 'utf-8');
     },
-    set: (namespace: string, key: string, value?: unknown) => {
-      fs.writeFileSync(SHARED_CACHE_CONFIG.getFilePath(namespace, key), JSON.stringify(value ?? null), 'utf-8');
+    remove: (namespace: string, key: string): void => {
+      const ns = namespace.trim();
+      const trimmedKey = key.trim();
+      if (!ns || !trimmedKey) {
+        return;
+      }
+      fs.rmSync(SHARED_CACHE_CONFIG.getFilePath(ns, trimmedKey), { force: true });
     },
-    remove: (namespace: string, key: string) => {
-      fs.rmSync(SHARED_CACHE_CONFIG.getFilePath(namespace, key), { force: true });
+    keys: (namespace: string): string[] => {
+      const ns = namespace.trim();
+      if (!ns) {
+        return [];
+      }
+      const dir = SHARED_CACHE_CONFIG.getDir(ns);
+      if (!fs.existsSync(dir)) {
+        return [];
+      }
+      return fs.readdirSync(dir).map((key) => decodeURIComponent(key));
     },
   },
 };

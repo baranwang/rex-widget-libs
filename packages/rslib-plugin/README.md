@@ -75,82 +75,97 @@ export default defineConfig({
 | 选项 | 类型 | 默认值 | 描述 |
 |------|------|--------|------|
 | `typesFilePath` | `string` | `'src/rex-widget-env.d.ts'` | 生成的类型定义文件路径 |
-| `encrypt` | `boolean` | `false` | 生产构建后调用 [Rex 模块加密](https://rexnow.tv/encrypt/) 服务，将 JS 产物写成 `REXENC` 格式。`watch` 开发监听时不会加密。 |
+| `devPort` | `number` | `8000` | 开发模式本地文件服务监听端口 |
+| `encrypt` | `boolean` | `false` | 生产构建后调用 [Rex 模块加密](https://modules.rexnow.app/) 服务，将 JS 产物写成 `REXENC` 格式。`watch` 开发监听时不会加密。 |
 
 ## 💡 工作原理
 
 ### 1. 解析 WidgetMetadata
 
-插件会解析你的代码中的 `WidgetMetadata` 对象：
+插件会解析你的代码中的 `WidgetMetadata` 对象（包含 `globalParams`、`modules`、`search` 以及参数的 `dynamicOptions`）：
 
 ```ts
 // src/index.ts
 WidgetMetadata = {
   id: 'my-widget',
   title: 'My Widget',
+  version: '1.0.0',
+  requiredVersion: '0.0.6',
   modules: [
     {
-      id: 'search-module',
-      title: 'Search Module',
-      functionName: 'searchContent',
-      description: 'Search for content',
+      id: 'popular',
+      title: '热门内容',
+      functionName: 'loadPopular',
       params: [
         {
-          name: 'query',
-          title: 'Search Query',
-          type: 'input',
-        },
-        {
           name: 'category',
-          title: 'Category',
+          title: '分类',
           type: 'enumeration',
           enumOptions: [
-            { title: 'Movies', value: 'movies' },
-            { title: 'TV Shows', value: 'tvshows' },
+            { title: '电影', value: 'movies' },
+            { title: '剧集', value: 'tvshows' },
           ],
+        },
+        {
+          name: 'page',
+          title: '页码',
+          type: 'page',
         },
       ],
     },
   ],
+  search: {
+    id: 'search',
+    title: '搜索',
+    functionName: 'searchContent',
+    params: [{ name: 'page', title: '页码', type: 'page' }],
+  },
 };
 ```
 
 ### 2. 生成类型定义
 
-插件会根据 `WidgetMetadata` 自动生成相应的类型定义：
+插件会根据 `WidgetMetadata` 自动生成相应的类型定义（包括 `GlobalParams`、模块入口、顶层 `search` 入口以及 `dynamicOptions` 加载函数）：
 
 ```ts
 // src/rex-widget-env.d.ts
 /// <reference types='@rexnow/libs/env' />
 
-//#region search-module
-/**
- * Params of Search Module
- */
-interface SearchContentParams {
-  /**
-   * Search Query
-   */
-  query: string;
-  /**
-   * Category
-   */
-  category: 'movies' | 'tvshows';
+declare namespace MyWidget {
+  interface GlobalParams {}
 }
 
-/**
- * Search Module
- * @description Search for content
- * @param {SearchContentParams} params
- * @returns {Promise<VideoItem[]>}
- */
-function searchContent(params: SearchContentParams): Promise<VideoItem[]>;
+//#region popular
+/** Params of 热门内容 */
+interface LoadPopularParams extends MyWidget.GlobalParams, VideoListParams {
+  /** 分类 */
+  category: 'movies' | 'tvshows';
+  /** 页码 */
+  page: string;
+}
 
-/**
- * Search Module
- */
-type SearchContentType = typeof searchContent;
-//#endregion search-module
+/** Return Type of 热门内容 */
+interface LoadPopularReturnType extends Array<VideoItem> {}
+
+/** 热门内容 */
+declare let loadPopular: (params: LoadPopularParams) => LoadPopularReturnType | Promise<LoadPopularReturnType>;
+//#endregion popular
+
+//#region search
+/** Params of 搜索 */
+interface SearchContentParams extends MyWidget.GlobalParams {
+  /** 搜索关键词（由 Rex 注入） */
+  keyword: string;
+  /** 页码 */
+  page: string;
+}
+
+/** Return Type of 搜索 */
+interface SearchContentReturnType extends Array<VideoItem> {}
+
+/** 搜索 */
+declare let searchContent: (params: SearchContentParams) => SearchContentReturnType | Promise<SearchContentReturnType>;
+//#endregion search
 ```
 
 ### 3. 清除导出声明
@@ -159,130 +174,29 @@ type SearchContentType = typeof searchContent;
 
 ### 4. 模块加密
 
-设置 `encrypt: true` 后，插件会在类型生成完成之后，把构建出的 `.js` 发送到 `https://api.rexnow.tv/api/widgets/encrypt`，并用返回的 `REXENC` 信封覆盖产物。协议与 [rexnow.tv/encrypt](https://rexnow.tv/encrypt/) 一致：`AES-256-GCM`（`A256GCM` / `rex-1`），加密结果仅供 Rex 使用。
+设置 `encrypt: true` 后，插件会在类型生成完成之后，把构建出的 `.js` 发送到 `https://api.rexnow.tv/api/widgets/encrypt`，并用返回的 `REXENC` 信封覆盖产物。协议与 [modules.rexnow.app](https://modules.rexnow.app/) 一致：`AES-256-GCM`（`A256GCM` / `rex-1`），加密结果仅供 Rex 使用。
 
 请保留未加密的源码。加密不会在 `rslib build --watch` 时执行，以免开发服务器读到密文。构建机需要能访问 `api.rexnow.tv`；加密失败会使生产构建失败。大文件可能需要 1–2 分钟；超过 2 MiB 或已经是 `REXENC` / `FWENC` 的文件会被拒绝。不要同时发布未加密的 source map。
 
-## 📚 完整示例
-
-### 项目结构
-
-```
-my-widget/
-├── src/
-│   ├── index.ts                    # 主要逻辑
-│   └── rex-widget-env.d.ts     # 自动生成的类型定义
-├── rslib.config.ts                 # 构建配置
-├── package.json
-└── tsconfig.json
-```
-
-### 源代码示例
-
-```ts
-// src/index.ts
-WidgetMetadata = {
-  id: 'movie-search',
-  title: '电影搜索',
-  modules: [
-    {
-      id: 'search',
-      title: '搜索电影',
-      functionName: 'searchMovies',
-      description: '根据关键词搜索电影',
-      params: [
-        {
-          name: 'keyword',
-          title: '关键词',
-          type: 'input',
-        },
-        {
-          name: 'year',
-          title: '年份',
-          type: 'input',
-        },
-        {
-          name: 'genre',
-          title: '类型',
-          type: 'enumeration',
-          enumOptions: [
-            { title: '动作', value: 'action' },
-            { title: '喜剧', value: 'comedy' },
-            { title: '剧情', value: 'drama' },
-          ],
-        },
-      ],
-    },
-  ],
-};
-
-// 实现搜索函数
-async function searchMovies(params: SearchMoviesParams): Promise<VideoItem[]> {
-  const { keyword, year, genre } = params;
-  
-  // 使用 Widget API 进行搜索
-  const response = await Widget.http.get('https://api.example.com/search', {
-    params: { q: keyword, year, genre },
-  });
-  
-  return response.data.map(item => ({
-    id: item.id,
-    title: item.title,
-    year: item.year,
-    // ... 其他字段
-  }));
-}
-```
-
-### 生成的类型定义
-
-```ts
-// src/rex-widget-env.d.ts (自动生成)
-/// <reference types='@rexnow/libs/env' />
-
-//#region search
-/**
- * Params of 搜索电影
- */
-interface SearchMoviesParams {
-  /**
-   * 关键词
-   */
-  keyword: string;
-  /**
-   * 年份
-   */
-  year: string;
-  /**
-   * 类型
-   */
-  genre: 'action' | 'comedy' | 'drama';
-}
-
-/**
- * 搜索电影
- * @description 根据关键词搜索电影
- * @param {SearchMoviesParams} params
- * @returns {Promise<VideoItem[]>}
- */
-function searchMovies(params: SearchMoviesParams): Promise<VideoItem[]>;
-
-/**
- * 搜索电影
- */
-type SearchMoviesType = typeof searchMovies;
-//#endregion search
-```
-
 ## 🎯 支持的参数类型
 
-插件支持以下参数类型的自动类型生成：
+插件支持 [Rex 模块文档](https://modules.rexnow.app/guide#params) 中的全部参数类型：
 
 | 参数类型 | 描述 | 生成的 TypeScript 类型 |
 |----------|------|----------------------|
-| `input` | 输入框 | `string` |
-| `enumeration` | 枚举选择 | `'option1' \| 'option2' \| ...` |
-| `constant` | 常量值 | `'constantValue'` |
+| `input` | 文本输入 | `string` |
+| `enumeration` | 单选枚举（静态 / 配置 `dynamicOptions` 时） | `'option1' \| 'option2' \| ...` / `string` |
+| `constant` | 固定常量值 | `'constantValue'` |
+| `count` | 数量 | `string` |
+| `page` | 页码（支持 `startPage`） | `string` |
+| `offset` | 偏移量 | `string` |
+| `language` | App 注入语言 | `string` |
+| `timezone` | App 注入时区 | `string` |
+| `folder` | 文件夹 | `string` |
+| `userId` | App 注入用户 ID | `string` |
+| `configId` | App 注入配置 ID | `string` |
+
+> 带 `belongTo` 条件的参数在生成的接口中会自动标记为可选属性（`?`）；带 `dynamicOptions` 的参数会自动为其 `functionName` 生成顶层函数声明。
 
 ## 🔧 开发模式
 
@@ -295,18 +209,11 @@ npm run dev
 pnpm dev
 ```
 
-## 🤝 最佳实践
-
-1. **保持 WidgetMetadata 结构清晰**：确保每个模块都有明确的 ID 和功能定义
-2. **使用描述性的函数名**：函数名应该清晰地表达其功能
-3. **提供完整的参数描述**：为每个参数提供有意义的标题和描述
-4. **合理组织模块**：将相关功能组织在一起，避免模块过于复杂
-
 ## 📚 相关文档
 
 - [@rexnow/libs](../libs/README.md) - 核心工具库
 - [create-rex-widget](../create-rex-widget/README.md) - 脚手架工具
-- [Rex Widget 开发指南](https://docs.forward-widget.com)
+- [Rex 模块官方文档](https://modules.rexnow.app/guide)
 
 ## 🤝 贡献
 
