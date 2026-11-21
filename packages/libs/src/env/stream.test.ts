@@ -45,7 +45,9 @@ test('StreamSourceItem matches official VideoResource extras', () => {
   expect(getPropertyTypeText(item, 'customHeaders')).toBe('Record<string, string>');
   expect(getPropertyTypeText(item, 'headers')).toBe('Record<string, string>');
   expect(getPropertyTypeText(item, 'playerType')).toBe("'system' | 'app'");
+  expect(getPropertyTypeText(item, 'externalSubtitles')).toBe('ExternalSubtitleItem[]');
   expect(item.getProperty('customHeaders')?.hasQuestionToken()).toBe(true);
   expect(item.getProperty('headers')?.hasQuestionToken()).toBe(true);
   expect(item.getProperty('playerType')?.hasQuestionToken()).toBe(true);
+  expect(item.getProperty('externalSubtitles')?.hasQuestionToken()).toBe(true);
 });

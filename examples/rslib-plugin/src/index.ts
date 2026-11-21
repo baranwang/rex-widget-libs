@@ -3,8 +3,14 @@ WidgetMetadata = {
   title: 'Test Widget',
   author: 'Baran',
   description: 'Test Widget Description',
-  version: '0.0.0',
-  requiredVersion: '0.0.2',
+  version: '1.0.0',
+  requiredVersion: '0.0.6',
+  continuousPlay: false,
+  i18n: {
+    en: {
+      'Test Widget': 'Test Widget',
+    },
+  },
   globalParams: [
     {
       name: 'server',
@@ -12,13 +18,19 @@ WidgetMetadata = {
       type: 'constant',
       value: 'https://api.example.com',
     },
+    {
+      name: 'language',
+      title: 'Language',
+      type: 'language',
+    },
   ],
   modules: [
     {
       id: 'test-module',
       title: 'Test Module',
+      subtitle: 'Test Module Subtitle',
+      type: 'video',
       functionName: 'testFunction',
-      description: 'Test Module Description',
       params: [
         {
           name: 'foo',
@@ -45,27 +57,40 @@ WidgetMetadata = {
           ],
         },
         {
+          name: 'genre',
+          title: 'Genre',
+          type: 'enumeration',
+          enumOptions: [{ title: 'All', value: '' }],
+          belongTo: { paramName: 'bar', value: ['option1', 'option2'] },
+          dynamicOptions: { functionName: 'loadGenreOptions', dependsOn: ['bar'] },
+        },
+        {
           name: 'baz',
           title: 'Baz',
           description: 'Baz Description',
           type: 'constant',
           value: 'test-value',
         },
+        {
+          name: 'page',
+          title: 'Page',
+          type: 'page',
+        },
       ],
     },
     {
       id: 'test-module-2',
       title: 'Test Module 2',
+      subtitle: 'Test Module 2 Subtitle',
       functionName: 'testFunction2',
-      description: 'Test Module 2 Description',
       params: [],
     },
     {
       type: 'danmu',
       id: 'searchDanmu',
       functionName: 'searchDanmu',
-      title: 'Get Comments',
-      description: 'Get Comments Description',
+      title: 'Search Danmu',
+      subtitle: 'Search Danmu Subtitle',
       params: [],
     },
     {
@@ -73,7 +98,7 @@ WidgetMetadata = {
       id: 'getDetail',
       functionName: 'getDetail',
       title: 'Get Detail',
-      description: 'Get Detail Description',
+      subtitle: 'Get Detail Subtitle',
       params: [],
     },
     {
@@ -81,45 +106,38 @@ WidgetMetadata = {
       id: 'getComments',
       functionName: 'getComments',
       title: 'Get Comments',
-      description: 'Get Comments Description',
+      subtitle: 'Get Comments Subtitle',
       params: [],
     },
   ],
+  search: {
+    id: 'search',
+    title: 'Search',
+    functionName: 'searchContent',
+    params: [{ name: 'page', title: 'Page', type: 'page' }],
+  },
 };
-
-// testFunction = function testFunction() {
-//   console.log('testFunction');
-//   return [];
-// };
-
-// export function testFunction(params: TestFunctionParams): VideoItem[] {
-//   return [];
-// }
-
-// export function searchDanmu(params: SearchDanmuParams): SearchDanmuReturnType {
-//   return Promise.resolve({
-//     animes: [
-//       {
-//         animeId: 1223,
-//         bangumiId: 'string',
-//         animeTitle: 'string',
-//         type: 'tvseries',
-//         typeDescription: 'string',
-//         imageUrl: 'string',
-//         startDate: '2025-08-08T13:25:11.189Z',
-//         episodeCount: 12,
-//         rating: 0,
-//         isFavorited: true,
-//       },
-//     ],
-//   });
-// }
-
-// export function getDetail(params: GetDetailParams) {
-//   console.log(params);
-// }
 
 testFunction = async (params) => {
   console.log(params);
   return [];
+};
+
+loadGenreOptions = async (params) => {
+  console.log(params.bar);
+  return [{ title: 'All', value: '' }];
+};
+
+searchContent = async (params) => {
+  console.log(params.keyword, params.page);
+  return [];
+};
+
+loadDetail = async (link) => {
+  return {
+    id: link,
+    type: 'url',
+    link,
+    title: Widget.i18n('Test Widget'),
+  };
 };

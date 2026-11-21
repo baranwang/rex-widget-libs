@@ -1,22 +1,6 @@
-import type { SourceFile, WriterFunction } from "ts-morph";
-import { StructureKind } from "ts-morph";
-import { generateTypeName } from "../utils";
-
-/**
- * 获取弹幕模块的返回类型扩展
- */
-function getReturnTypeExtends(moduleId: string): WriterFunction | undefined {
-  switch (moduleId) {
-    case "getDetail":
-      return (writer) => writer.write("Array<GetDetailResponseItem>");
-    case "getComments":
-      return (writer) => writer.write("GetCommentsResponse");
-    case "getDanmuWithSegmentTime":
-      return (writer) => writer.write("GetDanmuWithSegmentTimeResponse");
-    default:
-      return undefined;
-  }
-}
+import type { SourceFile } from 'ts-morph';
+import { StructureKind } from 'ts-morph';
+import { generateParamType, generateTypeName } from '../utils';
 
 /**
  * 生成弹幕模块接口
@@ -27,7 +11,7 @@ export function generateDanmuModuleInterfaces(
   module: WidgetModule,
   typeNames = generateTypeName(module),
 ) {
-  if (module.type !== "danmu") {
+  if (module.type !== 'danmu') {
     return;
   }
 
@@ -44,28 +28,40 @@ export function generateDanmuModuleInterfaces(
     ],
     extends: (writer) => {
       writer.write(`${nameSpaceName}.GlobalParams, BaseParams`);
-      if (id === "getDetail") {
-        writer.write(", AnimeItem");
+      if (id === 'getDetail') {
+        writer.write(', AnimeItem');
       }
-      if (id === "getComments") {
-        writer.write(", EpisodeItem");
+      if (id === 'getComments') {
+        writer.write(', EpisodeItem');
       }
-      if (id === "getDanmuWithSegmentTime") {
-        writer.write(", GetDanmuWithSegmentTimeParams");
+      if (id === 'getCommentsWithSegmentTime') {
+        writer.write(', GetCommentsWithSegmentTimeParams');
+      }
+      if (id === 'getDanmuWithSegmentTime') {
+        writer.write(', GetDanmuWithSegmentTimeParams');
       }
     },
+    properties: module.params?.map(generateParamType),
   });
+
+  if (id === 'getComments' || id === 'getCommentsWithSegmentTime' || id === 'getDanmuWithSegmentTime') {
+    sourceFile.addTypeAlias({
+      name: returnTypeName,
+      type: 'DanmuCommentsResult',
+    });
+    return;
+  }
 
   // 生成返回类型接口
   sourceFile.addInterface({
     name: returnTypeName,
-    extends: getReturnTypeExtends(id),
+    extends: id === 'getDetail' ? ['Array<GetDetailResponseItem>'] : undefined,
     properties:
-      id === "searchDanmu"
+      id === 'searchDanmu'
         ? [
             {
-              name: "animes",
-              type: "Array<AnimeItem>",
+              name: 'animes',
+              type: 'Array<AnimeItem>',
             },
           ]
         : [],

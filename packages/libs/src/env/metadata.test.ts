@@ -42,11 +42,24 @@ function getPropertyTypeText(iface: InterfaceDeclaration, name: string): string 
   return typeNode.getText();
 }
 
-test('WidgetMetadata declares icon and iconurl as one optional icon field', () => {
+test('WidgetMetadata declares icon aliases, contentType, continuousPlay, and search module', () => {
   const metadata = getInterface('metadata.ts', 'WidgetMetadata');
 
   expect(getPropertyTypeText(metadata, 'icon')).toBe('string');
   expect(getPropertyTypeText(metadata, 'iconurl')).toBe('string');
+  expect(getPropertyTypeText(metadata, 'iconUrl')).toBe('string');
+  expect(getPropertyTypeText(metadata, 'iconURL')).toBe('string');
+  expect(getPropertyTypeText(metadata, 'contentType')).toBe('WidgetContentType');
+  expect(getPropertyTypeText(metadata, 'continuousPlay')).toBe('boolean');
+  expect(getPropertyTypeText(metadata, 'search')).toBe('WidgetSearchModule');
+
+  const contentTypeText = loadEnvSource('metadata.ts')
+    .getTypeAliasOrThrow('WidgetContentType')
+    .getTypeNodeOrThrow()
+    .getText();
+  for (const contentType of ['video', 'music', 'audiobook', 'shortDrama']) {
+    expect(contentTypeText).toContain(`'${contentType}'`);
+  }
 });
 
 test('WidgetMetadata.i18n uses known Rex locales then string fallback', () => {
@@ -69,7 +82,28 @@ test('WidgetMetadata.i18n uses known Rex locales then string fallback', () => {
   expect(getPropertyTypeText(metadata, 'i18n')).toBe('Partial<Record<WidgetI18nLocale, Record<string, string>>>');
 });
 
-test('WidgetModuleParamType includes userId', () => {
+test('WidgetModule supports video, person, danmu (including getCommentsWithSegmentTime), stream, and subtitle', () => {
+  const baseModule = getInterface('metadata.ts', 'BaseWidgetModule');
+  expect(getPropertyTypeText(baseModule, 'id')).toBe('string');
+  expect(getPropertyTypeText(baseModule, 'subtitle')).toBe('string');
+  expect(getPropertyTypeText(baseModule, 'iconurl')).toBe('string');
+  expect(getPropertyTypeText(baseModule, 'iconUrl')).toBe('string');
+  expect(getPropertyTypeText(baseModule, 'iconURL')).toBe('string');
+
+  const videoModule = getInterface('metadata.ts', 'WidgetModuleVideo');
+  expect(getPropertyTypeText(videoModule, 'type')).toBe("'video'");
+
+  const personModule = getInterface('metadata.ts', 'WidgetModulePerson');
+  expect(personModule.getProperty('type')?.hasQuestionToken()).toBe(false);
+  expect(personModule.getProperty('type')?.getTypeNodeOrThrow().getText()).toBe("'person'");
+
+  const danmuModule = getInterface('metadata.ts', 'WidgetModuleDanmu');
+  const danmuIdText = danmuModule.getProperty('id')?.getTypeNodeOrThrow().getText() ?? '';
+  expect(danmuIdText).toContain("'getCommentsWithSegmentTime'");
+  expect(danmuIdText).toContain("'getDanmuWithSegmentTime'");
+});
+
+test('WidgetModuleParamType includes all 11 Rex param types and WidgetModuleParam supports startPage, belongTo array, and dynamicOptions', () => {
   const alias = loadEnvSource('metadata.ts').getTypeAliasOrThrow('WidgetModuleParamType');
   const typeNode = alias.getTypeNode();
   expect(typeNode).toBeDefined();
@@ -78,5 +112,25 @@ test('WidgetModuleParamType includes userId', () => {
     throw new Error('missing WidgetModuleParamType type node');
   }
 
-  expect(typeNode.getText().includes("'userId'") || typeNode.getText().includes('"userId"')).toBe(true);
+  const paramTypeText = typeNode.getText();
+  for (const paramType of [
+    'input',
+    'constant',
+    'enumeration',
+    'count',
+    'page',
+    'offset',
+    'language',
+    'timezone',
+    'folder',
+    'userId',
+    'configId',
+  ]) {
+    expect(paramTypeText.includes(`'${paramType}'`) || paramTypeText.includes(`"${paramType}"`)).toBe(true);
+  }
+
+  const param = getInterface('metadata.ts', 'WidgetModuleParam');
+  expect(getPropertyTypeText(param, 'startPage')).toBe('number');
+  expect(getPropertyTypeText(param, 'belongTo')).toBe('WidgetModuleParamBelongTo | WidgetModuleParamBelongTo[]');
+  expect(getPropertyTypeText(param, 'dynamicOptions')).toBe('WidgetModuleParamDynamicOptions');
 });

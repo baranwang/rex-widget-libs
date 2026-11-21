@@ -35,6 +35,30 @@ function getPropertyTypeText(iface: InterfaceDeclaration, name: string): string 
   return typeNode.getText();
 }
 
+test('ExternalSubtitleItem and SubtitleItem match Rex subtitle contracts', () => {
+  const ext = getInterface('ExternalSubtitleItem');
+  expect(getPropertyTypeText(ext, 'url')).toBe('string');
+  expect(ext.getProperty('url')?.hasQuestionToken()).toBe(false);
+  expect(getPropertyTypeText(ext, 'title')).toBe('string');
+  expect(getPropertyTypeText(ext, 'language')).toBe('string');
+  expect(getPropertyTypeText(ext, 'isDefault')).toBe('boolean');
+  expect(getPropertyTypeText(ext, 'customHeaders')).toBe('Record<string, string>');
+  expect(getPropertyTypeText(ext, 'headers')).toBe('Record<string, string>');
+
+  const sub = getInterface('SubtitleItem');
+  expect(getPropertyTypeText(sub, 'url')).toBe('string');
+  expect(sub.getProperty('url')?.hasQuestionToken()).toBe(false);
+  expect(getPropertyTypeText(sub, 'id')).toBe('string');
+  expect(getPropertyTypeText(sub, 'title')).toBe('string');
+  expect(getPropertyTypeText(sub, 'lang')).toBe('string');
+  expect(getPropertyTypeText(sub, 'customHeaders')).toBe('Record<string, string>');
+  expect(getPropertyTypeText(sub, 'headers')).toBe('Record<string, string>');
+  expect(getPropertyTypeText(sub, 'count')).toBe('number');
+  for (const optionalField of ['id', 'title', 'lang', 'customHeaders', 'headers', 'count']) {
+    expect(sub.getProperty(optionalField)?.hasQuestionToken()).toBe(true);
+  }
+});
+
 test('SubtitleArchiveFile describes an extracted archive entry', () => {
   const file = getInterface('SubtitleArchiveFile');
 
