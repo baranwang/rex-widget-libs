@@ -1,5 +1,11 @@
 # create-rex-widget
 
+## 3.2.0
+
+### Minor Changes
+
+- 13ee99c: Align environment types, WidgetAdaptor runtime, rslib-plugin type generation, and scaffold templates with the official Rex modules guide (0.0.6 / 0.0.7).
+
 ## 3.1.3
 
 ### Patch Changes
