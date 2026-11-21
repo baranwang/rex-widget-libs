@@ -12,11 +12,11 @@ export default defineConfig({
     {
       format: 'esm',
       syntax: 'es6',
-      autoExternal: false,
     },
   ],
   output: {
     target: 'web',
+    autoExternal: false,
     minify: {
       jsOptions: {
         minimizerOptions: {

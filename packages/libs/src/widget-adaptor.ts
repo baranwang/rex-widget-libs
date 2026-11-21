@@ -20,8 +20,12 @@ export interface RequestOptions {
 export interface HttpRequestOptions extends RequestOptions {
   url: string;
   method?: HttpMethod;
+  /** 请求体（对象自动 JSON 序列化，字符串按原样发送；Rex 仅读取 data 字段） */
   data?: unknown;
-  body?: unknown;
+  /**
+   * @deprecated Rex 宿主（WidgetShim / modules.rexnow.app 代理）仅消费 `data`，传入 `body` 会被忽略导致空请求体
+   */
+  body?: never;
   /** 超时时间（秒），默认 20，范围 3–40；仅 Widget.http.request 生效 */
   timeout?: number;
   /** 是否自动解析 JSON 响应体，默认 true；仅 Widget.http.request 生效 */
@@ -310,8 +314,8 @@ export const WidgetAdaptor = {
       return createHttpRequest<T>(url, 'DELETE', pickShortcutOptions(options));
     },
     request: async <T = unknown>(options: HttpRequestOptions) => {
-      const { url, method = 'GET', data, body, ...rest } = options;
-      return createHttpRequest<T>(url, method, { ...rest, body: body ?? data });
+      const { url, method = 'GET', data, body: _ignoredBody, ...rest } = options;
+      return createHttpRequest<T>(url, method, { ...rest, body: data });
     },
   },
   tmdb: {

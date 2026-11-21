@@ -129,6 +129,7 @@ interface EntryDescriptor {
  */
 function generateFunctionTypesFactory(api: RsbuildPluginAPI, sourceFile: SourceFile) {
   const safeParseWidgetMetadata = safeParseWidgetMetadataFactory(api);
+  const generatedIds = new Set<string>();
 
   return async (entry: string): Promise<void> => {
     try {
@@ -138,6 +139,10 @@ function generateFunctionTypesFactory(api: RsbuildPluginAPI, sourceFile: SourceF
       if (!widgetMetadataObject) {
         return;
       }
+      if (generatedIds.has(widgetMetadataObject.id)) {
+        return;
+      }
+      generatedIds.add(widgetMetadataObject.id);
       const nameSpaceName = upperFirst(camelCase(widgetMetadataObject.id));
       const nameSpace = sourceFile.addModule({
         name: nameSpaceName,
@@ -428,14 +433,17 @@ async function processAfterBuild(
 
   const generateWidgetTypes = generateFunctionTypesFactory(api, typeDefFile);
 
-  // 并行处理输出文件
+  // 并行清理并规范化输出文件，再按确定顺序生成类型声明
   await Promise.all(
     outputFiles.map(async (outputFile) => {
       await clearExportDeclaration(outputFile);
       await addSpaceToWidgetMetadata(outputFile);
-      await generateWidgetTypes(outputFile);
     }),
   );
+
+  for (const outputFile of outputFiles) {
+    await generateWidgetTypes(outputFile);
+  }
 
   await typeDefFile.save();
 
@@ -444,12 +452,37 @@ async function processAfterBuild(
   }
 }
 
+const JS_OUTPUT_EXTENSION_RE = /\.[cm]?js$/;
+
+function collectStatAssets(
+  stat: { outputPath?: string; assets?: Array<{ name?: string }> },
+  fallbackDir: string,
+): string[] {
+  const outputDir = stat.outputPath || fallbackDir;
+  return (stat.assets ?? [])
+    .map((asset) => (asset.name ? path.resolve(outputDir, asset.name) : ''))
+    .filter((file) => file && JS_OUTPUT_EXTENSION_RE.test(file) && fs.existsSync(file));
+}
+
 function getOutputFiles(api: RsbuildPluginAPI, stats: Rspack.Stats | Rspack.MultiStats | undefined): string[] {
   const buildStats = stats?.toJson({ assets: true, outputPath: true });
-  const outputDir = buildStats?.outputPath || api.context.distPath;
-  const outputFiles = buildStats?.assets?.map((asset) => path.resolve(outputDir, asset.name));
+  if (!buildStats) {
+    return [];
+  }
 
-  return outputFiles?.filter((file) => fs.existsSync(file)) || [];
+  const files = new Set<string>();
+  for (const file of collectStatAssets(buildStats, api.context.distPath)) {
+    files.add(file);
+  }
+  if (Array.isArray(buildStats.children)) {
+    for (const child of buildStats.children) {
+      for (const file of collectStatAssets(child, api.context.distPath)) {
+        files.add(file);
+      }
+    }
+  }
+
+  return Array.from(files);
 }
 
 async function setupTypeDefinitionFile(dtsPath: string): Promise<SourceFile> {
