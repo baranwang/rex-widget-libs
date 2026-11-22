@@ -16,14 +16,17 @@ interface ExternalSubtitleItem {
   headers?: Record<string, string>;
 }
 
+/**
+ * 独立字幕 / 音乐歌词条目（由 `loadSubtitle` 入口返回；音乐模块复用此接口提供 LRC / TTML / SRT / VTT / 纯文本歌词）
+ */
 interface SubtitleItem {
-  /** 字幕唯一标识（可选） */
+  /** 字幕/歌词唯一标识（可选） */
   id?: string;
-  /** 字幕标题（注意独立字幕入口用 title / lang） */
+  /** 字幕/歌词标题（注意独立字幕入口用 title / lang） */
   title?: string;
-  /** 字幕语言代码（如 zh-CN） */
+  /** 字幕/歌词语言代码（如 zh-CN / ja / en） */
   lang?: string;
-  /** 字幕地址 */
+  /** 字幕/歌词地址（支持 HTTP(S) 链接与 `data:` URI，如 `data:text/plain;charset=utf-8;base64,...`） */
   url: string;
   /** 请求字幕时附带的自定义请求头 */
   customHeaders?: Record<string, string>;
