@@ -124,6 +124,9 @@ interface WidgetModuleStream extends BaseWidgetModule {
   id: 'loadResource';
 }
 
+/**
+ * 独立字幕 / 音乐歌词入口（`type: 'subtitle'`、`id: 'loadSubtitle'`、`functionName: 'loadSubtitle'`）
+ */
 interface WidgetModuleSubtitle extends BaseWidgetModule {
   type: 'subtitle';
   id: 'loadSubtitle';
