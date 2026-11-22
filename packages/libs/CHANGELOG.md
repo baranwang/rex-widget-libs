@@ -1,5 +1,11 @@
 # @rexnow/libs
 
+## 3.2.2
+
+### Patch Changes
+
+- cd864f0: Document that Rex music modules reuse the standalone subtitle entrypoint (`loadSubtitle`, `SubtitleItem`) for lyrics, supporting `data:` URIs and all lyrics formats.
+
 ## 3.2.1
 
 ### Patch Changes
