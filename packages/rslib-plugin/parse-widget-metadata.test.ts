@@ -350,3 +350,41 @@ test('generates types for danmu including getCommentsWithSegmentTime and DanmuCo
   expect(dts).toContain('type FindSegmentCommentsReturnType = DanmuCommentsResult;');
   assertDtsTypechecks(dts);
 });
+
+test('generates typed declarations for Rex 0.0.9 editActions handlers', async () => {
+  const { dts, errors } = await generateTypesFromOutput(`var WidgetMetadata = {
+  id: 'rex.example.actions',
+  title: '操作示例',
+  version: '1.0.0',
+  requiredVersion: '0.0.9',
+  modules: [
+    {
+      id: 'movies',
+      title: '电影',
+      functionName: 'loadMovies',
+      editActions: [
+        { id: 'refresh', title: '刷新片单', functionName: 'refreshMovies' },
+        { id: 'sync', title: '同步状态', functionName: 'syncSection' },
+      ],
+    },
+    {
+      id: 'shows',
+      title: '剧集',
+      functionName: 'loadShows',
+      editActions: [
+        { id: 'sync', title: '同步状态', functionName: 'syncSection' },
+      ],
+    },
+  ],
+};
+`);
+
+  expect(errors).toEqual([]);
+  expect(dts).toContain(
+    'declare let refreshMovies: (params: LoadMoviesParams & WidgetEditActionParams) => WidgetActionResult | void | Promise<WidgetActionResult | void>;',
+  );
+  expect(dts).toContain(
+    'declare let syncSection: (params: (LoadMoviesParams | LoadShowsParams) & WidgetEditActionParams) => WidgetActionResult | void | Promise<WidgetActionResult | void>;',
+  );
+  assertDtsTypechecks(dts);
+});
