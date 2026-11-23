@@ -67,6 +67,7 @@ test('widgetMetadataSchema accepts unknown i18n locale keys, 0.0.7 music metadat
           subtitle: '按流派浏览',
           type: 'video',
           functionName: 'loadGenres',
+          editActions: [{ id: 'refresh', title: '刷新流派', functionName: 'refreshGenres' }],
           params: [
             { name: 'page', title: '页码', type: 'page', startPage: 0 },
             {
@@ -115,6 +116,7 @@ test('widgetMetadataSchema accepts unknown i18n locale keys, 0.0.7 music metadat
       albumMotionArtwork: 'https://example.com/motion.mp4',
       customHeaders: { Referer: 'https://example.com' },
       externalSubtitles: [{ url: 'https://example.com/zh.srt', title: '中文', language: 'zh-CN', isDefault: true }],
+      actions: [{ id: 'favorite', title: '加入收藏', functionName: 'toggleFavorite' }],
       tracks: [
         {
           id: 'song-01',
@@ -122,6 +124,7 @@ test('widgetMetadataSchema accepts unknown i18n locale keys, 0.0.7 music metadat
           mediaType: 'song',
           title: '潮汐',
           videoUrl: 'https://example.com/1.mp3',
+          actions: [{ id: 'like', title: '红心喜欢', functionName: 'toggleLike' }],
         },
       ],
     });

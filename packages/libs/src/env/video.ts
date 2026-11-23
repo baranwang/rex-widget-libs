@@ -97,6 +97,8 @@ interface VideoItemChild {
   externalSubtitles?: ExternalSubtitleItem[];
   /** 剧照/截图列表，详情页展示 */
   backdropPaths?: string[];
+  /** 长按或右键打开的条目自定义菜单操作列表（Rex 0.0.9+） */
+  actions?: WidgetAction[];
 }
 
 /**

@@ -134,3 +134,30 @@ test('WidgetModuleParamType includes all 11 Rex param types and WidgetModulePara
   expect(getPropertyTypeText(param, 'belongTo')).toBe('WidgetModuleParamBelongTo | WidgetModuleParamBelongTo[]');
   expect(getPropertyTypeText(param, 'dynamicOptions')).toBe('WidgetModuleParamDynamicOptions');
 });
+
+test('Rex 0.0.9 custom actions types and BaseWidgetModule.editActions match the official guide', () => {
+  const baseModule = getInterface('metadata.ts', 'BaseWidgetModule');
+  expect(getPropertyTypeText(baseModule, 'editActions')).toBe('WidgetAction[]');
+
+  const action = getInterface('metadata.ts', 'WidgetAction');
+  expect(action.getProperty('id')?.hasQuestionToken()).toBe(false);
+  expect(action.getProperty('id')?.getTypeNodeOrThrow().getText()).toBe('string');
+  expect(action.getProperty('title')?.hasQuestionToken()).toBe(false);
+  expect(action.getProperty('title')?.getTypeNodeOrThrow().getText()).toBe('string');
+  expect(action.getProperty('functionName')?.hasQuestionToken()).toBe(false);
+  expect(action.getProperty('functionName')?.getTypeNodeOrThrow().getText()).toBe('string');
+
+  const editParams = getInterface('metadata.ts', 'WidgetEditActionParams');
+  expect(editParams.getProperty('actionId')?.hasQuestionToken()).toBe(false);
+  expect(editParams.getProperty('actionId')?.getTypeNodeOrThrow().getText()).toBe('string');
+
+  const itemParams = getInterface('metadata.ts', 'WidgetItemActionParams');
+  expect(itemParams.getProperty('actionId')?.hasQuestionToken()).toBe(false);
+  expect(itemParams.getProperty('actionId')?.getTypeNodeOrThrow().getText()).toBe('string');
+  expect(itemParams.getProperty('itemId')?.hasQuestionToken()).toBe(false);
+  expect(itemParams.getProperty('itemId')?.getTypeNodeOrThrow().getText()).toBe('string');
+
+  const result = getInterface('metadata.ts', 'WidgetActionResult');
+  expect(getPropertyTypeText(result, 'message')).toBe('string');
+  expect(getPropertyTypeText(result, 'refresh')).toBe('boolean');
+});

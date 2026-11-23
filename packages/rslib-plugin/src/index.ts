@@ -177,7 +177,7 @@ function generateDynamicOptionsFunctions(
   sourceFile: SourceFile,
   entries: EntryDescriptor[],
   entryParamsTypeByEntry: Map<EntryDescriptor, string>,
-  declaredFunctionNames: ReadonlySet<string>,
+  declaredFunctionNames: Set<string>,
   globalParams?: WidgetModuleParam[],
 ): void {
   const dynamicFnParamsMap = new Map<string, Set<string>>();
@@ -213,6 +213,7 @@ function generateDynamicOptionsFunctions(
   }
 
   for (const [fnName, paramsTypes] of dynamicFnParamsMap) {
+    declaredFunctionNames.add(fnName);
     const paramsType = Array.from(paramsTypes).join(' | ');
     sourceFile.addStatements(`\n//#region dynamicOptions:${fnName}`);
     sourceFile.addVariableStatement({
@@ -232,6 +233,57 @@ function generateDynamicOptionsFunctions(
       ],
     });
     sourceFile.addStatements(`//#endregion dynamicOptions:${fnName}`);
+  }
+}
+
+function generateEditActionFunctions(
+  sourceFile: SourceFile,
+  entries: EntryDescriptor[],
+  entryParamsTypeByEntry: Map<EntryDescriptor, string>,
+  declaredFunctionNames: Set<string>,
+): void {
+  const editActionFnParamsMap = new Map<string, Set<string>>();
+
+  for (const entry of entries) {
+    const paramsTypeName = entryParamsTypeByEntry.get(entry);
+    if (!paramsTypeName) {
+      continue;
+    }
+    for (const action of entry.module.editActions ?? []) {
+      if (!action.functionName || declaredFunctionNames.has(action.functionName)) {
+        continue;
+      }
+      const existing = editActionFnParamsMap.get(action.functionName);
+      if (existing) {
+        existing.add(paramsTypeName);
+      } else {
+        editActionFnParamsMap.set(action.functionName, new Set([paramsTypeName]));
+      }
+    }
+  }
+
+  for (const [fnName, paramsTypes] of editActionFnParamsMap) {
+    declaredFunctionNames.add(fnName);
+    const baseParamsList = Array.from(paramsTypes);
+    const baseParams = baseParamsList.length > 1 ? `(${baseParamsList.join(' | ')})` : baseParamsList[0];
+    sourceFile.addStatements(`\n//#region editActions:${fnName}`);
+    sourceFile.addVariableStatement({
+      declarationKind: VariableDeclarationKind.Let,
+      hasDeclareKeyword: true,
+      declarations: [
+        {
+          name: fnName,
+          type: `(params: ${baseParams} & WidgetEditActionParams) => WidgetActionResult | void | Promise<WidgetActionResult | void>`,
+        },
+      ],
+      docs: [
+        {
+          kind: StructureKind.JSDoc,
+          description: `Edit action handler: ${fnName}`,
+        },
+      ],
+    });
+    sourceFile.addStatements(`//#endregion editActions:${fnName}`);
   }
 }
 
@@ -322,6 +374,7 @@ function generateModuleInterfaces(
     declaredFunctionNames,
     globalParams,
   );
+  generateEditActionFunctions(sourceFile, entries, entryParamsTypeByEntry, declaredFunctionNames);
 }
 
 // 文件处理工具

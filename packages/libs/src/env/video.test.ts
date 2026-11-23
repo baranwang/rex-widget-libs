@@ -83,6 +83,7 @@ test('VideoItemChild includes official media, person, music, and playback fields
   expect(getPropertyTypeText(child, 'headers')).toBe('Record<string, string>');
   expect(getPropertyTypeText(child, 'externalSubtitles')).toBe('ExternalSubtitleItem[]');
   expect(getPropertyTypeText(child, 'link')).toBe('string');
+  expect(getPropertyTypeText(child, 'actions')).toBe('WidgetAction[]');
 
   const mediaTypeText = loadEnvSource('video.ts').getTypeAliasOrThrow('MediaType').getTypeNodeOrThrow().getText();
   for (const mediaType of ['tv', 'movie', 'person', 'album', 'song', 'playlist', 'albumList', 'genre', 'radio']) {
@@ -107,6 +108,7 @@ test('VideoItemChild includes official media, person, music, and playback fields
     'headers',
     'externalSubtitles',
     'link',
+    'actions',
   ]) {
     expect(child.getProperty(optionalField)?.hasQuestionToken()).toBe(true);
   }
