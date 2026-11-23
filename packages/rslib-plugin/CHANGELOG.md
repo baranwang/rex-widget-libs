@@ -1,5 +1,14 @@
 # @rexnow/rslib-plugin
 
+## 3.3.0
+
+### Minor Changes
+
+- 9a772ba: Add Rex 0.0.9 custom button and item action support:
+  
+  - `@rexnow/libs`: add `WidgetAction`, `WidgetEditActionParams`, `WidgetItemActionParams`, `WidgetActionResult`, `BaseWidgetModule.editActions`, and `VideoItemChild.actions` (including generated Zod schemas).
+  - `@rexnow/rslib-plugin`: validate `editActions` via updated metadata schema and generate typed declarations for module `editActions` handlers in `rex-widget-env.d.ts`.
+
 ## 3.2.2
 
 No changes in this release.
